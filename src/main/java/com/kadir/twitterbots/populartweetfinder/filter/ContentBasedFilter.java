@@ -1,6 +1,7 @@
 package com.kadir.twitterbots.populartweetfinder.filter;
 
 import com.google.common.base.Optional;
+import com.kadir.twitterbots.populartweetfinder.dao.ContentFilterDao;
 import com.kadir.twitterbots.populartweetfinder.exceptions.IllegalLanguageKeyException;
 import com.kadir.twitterbots.populartweetfinder.exceptions.LanguageIdentifierInitialisingException;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
@@ -16,11 +17,13 @@ import com.optimaize.langdetect.text.TextObjectFactory;
 import com.vdurmont.emoji.EmojiParser;
 import org.apache.log4j.Logger;
 import twitter4j.Status;
+import twitter4j.UserMentionEntity;
 import zemberek.langid.LanguageIdentifier;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author akadir
@@ -33,27 +36,30 @@ public class ContentBasedFilter implements StatusFilter {
     private String languageKey;
     private LanguageIdentifier languageIdentifier;
     private LanguageDetector languageDetector;
+    private ContentFilterDao contentFilterDao;
+    private Set<String> ignoredWords;
+    private Set<String> ignoredUsernames;
 
     public ContentBasedFilter() {
-        logger.info(this.getClass().getSimpleName() + " created");
+        init();
+    }
+
+    private void init() {
         languageKey = System.getProperty("languageKey");
         if (DataUtil.isNullOrEmpty(languageKey)) {
             throw new IllegalLanguageKeyException(languageKey);
         }
         logger.info("Set languageKey:" + languageKey);
-
-        try {
-            initializeLanguageIdentifiers();
-        } catch (IOException e) {
-            logger.error("Error occured while initialising language identifiers.", e);
-            throw new LanguageIdentifierInitialisingException(e);
-        }
+        initializeLanguageIdentifiers();
+        contentFilterDao = new ContentFilterDao();
+        ignoredWords = contentFilterDao.getIgnoredWords();
+        ignoredUsernames = contentFilterDao.getIgnoredUsernames();
     }
 
     @Override
     public boolean passed(Status status) {
         String statusText = clearStatusText(status);
-        return !statusText.equals("") && checkLanguageViaZemberek(statusText) && checkLanguageViaOptimaizeLanguageDetector(statusText);
+        return statusText.length() > 30 && !doesStatusContainIgnoredWord(status) && checkLanguageViaZemberek(statusText) && checkLanguageViaOptimaizeLanguageDetector(statusText);
     }
 
     private String clearStatusText(Status status) {
@@ -61,6 +67,34 @@ public class ContentBasedFilter implements StatusFilter {
         statusText = statusText.replaceAll("[@#]\\S+", "").trim().replaceAll(" +", " ");
 
         return statusText;
+    }
+
+    private boolean doesStatusContainIgnoredWord(Status status) {
+        String lowerCaseContent = status.getText().toLowerCase();
+
+        return containsIgnoredWord(lowerCaseContent) || isMentionToIgnoredUsername(status);
+    }
+
+    private boolean containsIgnoredWord(String lowerCaseContent) {
+        for (String word : ignoredWords) {
+            if (lowerCaseContent.contains(word)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isMentionToIgnoredUsername(Status status) {
+        for (String username : ignoredUsernames) {
+            if (status.getUserMentionEntities().length > 0) {
+                for (UserMentionEntity userMentionEntity : status.getUserMentionEntities()) {
+                    if (userMentionEntity.getScreenName().equalsIgnoreCase(username)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private boolean checkLanguageViaZemberek(String text) {
@@ -80,9 +114,14 @@ public class ContentBasedFilter implements StatusFilter {
         return isCorrect;
     }
 
-    private void initializeLanguageIdentifiers() throws IOException {
-        initializeZemberekLanguageIdentifier();
-        initializeOptimaizeLanguageDetector();
+    private void initializeLanguageIdentifiers() {
+        try {
+            initializeZemberekLanguageIdentifier();
+            initializeOptimaizeLanguageDetector();
+        } catch (IOException e) {
+            logger.error("Error occured while initialising language identifiers.", e);
+            throw new LanguageIdentifierInitialisingException(e);
+        }
     }
 
     private void initializeZemberekLanguageIdentifier() throws IOException {

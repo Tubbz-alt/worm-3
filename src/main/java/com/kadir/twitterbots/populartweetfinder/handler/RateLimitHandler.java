@@ -16,6 +16,9 @@ public class RateLimitHandler {
 
     private static HashMap<String, RateLimitStatus> rateLimit = new HashMap<>();
 
+    private RateLimitHandler() {
+    }
+
     public static void handle(long id, RateLimitStatus rts, ApiProcessType processType) throws InterruptedException {
         //as default use 180 calls per 15 minute period (+75 seconds)
         double sleep = 15.0 * 65.0 / 180.0;
@@ -41,7 +44,7 @@ public class RateLimitHandler {
 
         if (sleep > 0) {
             logger.debug("Sleep " + String.format("%.2f", sleep) + " seconds for the next " + processType.getName() + " process. Thread name: " + Thread.currentThread().getName());
-            Thread.currentThread().sleep((long) (sleep * 1000));
+            Thread.sleep((long) (sleep * 1000));
         }
     }
 }

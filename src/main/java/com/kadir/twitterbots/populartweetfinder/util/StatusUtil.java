@@ -25,10 +25,10 @@ public class StatusUtil {
     }
 
     public static int calculateWeightedInteractionCount(Status status) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         int score = status.getFavoriteCount() + status.getRetweetCount();
-        SimpleDateFormat dateFormat = ApplicationConstants.DATE_FORMAT;
         Date today = new Date();
-        if (dateFormat.format(status.getCreatedAt()).equals(dateFormat.format(today))) {
+        if (simpleDateFormat.format(status.getCreatedAt()).equals(simpleDateFormat.format(today))) {
             return score;
         } else {
             Calendar statusCreation = Calendar.getInstance();

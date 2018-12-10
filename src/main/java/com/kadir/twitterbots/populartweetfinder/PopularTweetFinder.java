@@ -4,6 +4,7 @@ import com.kadir.twitterbots.populartweetfinder.authentication.BotAuthentication
 import com.kadir.twitterbots.populartweetfinder.dao.DatabaseInitialiser;
 import com.kadir.twitterbots.populartweetfinder.exceptions.PropertyNotLoadedException;
 import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
+import com.kadir.twitterbots.populartweetfinder.worker.DatabaseWorker;
 import com.kadir.twitterbots.populartweetfinder.worker.TweetFetcher;
 import org.apache.log4j.Logger;
 import twitter4j.Twitter;
@@ -14,6 +15,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author akadir
@@ -25,13 +30,15 @@ public class PopularTweetFinder implements Runnable {
 
     private Thread popularTweetFinderThread;
     private TweetFetcher tweetFetcher;
+    private DatabaseWorker databaseWorker;
+    private volatile ScheduledFuture<?> databaseWorkerScheduler;
 
     public static void main(String[] args) {
         PopularTweetFinder popularTweetFinder = new PopularTweetFinder();
         popularTweetFinder.start();
     }
 
-    public void start() {
+    public PopularTweetFinder() {
         setVmArgumentsFromPropertyFile();
         String consumerKey = System.getProperty("finderConsumerKey");
         String consumerSecret = System.getProperty("finderConsumerSecret");
@@ -44,6 +51,10 @@ public class PopularTweetFinder implements Runnable {
         DatabaseInitialiser.initializeDatabase();
 
         tweetFetcher = new TweetFetcher(twitter);
+        databaseWorker = new DatabaseWorker(tweetFetcher);
+    }
+
+    public void start() {
         tweetFetcher.start();
 
         logger.info("Starting popularTweetFinderThread");
@@ -52,14 +63,29 @@ public class PopularTweetFinder implements Runnable {
             popularTweetFinderThread.start();
             logger.info("popularTweetFinderThread started");
         }
+
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        try {
+            databaseWorkerScheduler = scheduler.scheduleWithFixedDelay(databaseWorker, 1, 1, TimeUnit.MINUTES);
+
+            logger.info("Scheduled");
+        } catch (Exception e) {
+            logger.error(e);
+        }
+
+        try {
+            Thread.sleep(1000L * 60 * 2);
+            databaseWorkerScheduler.cancel(false);
+        } catch (InterruptedException e) {
+            logger.error(e);
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void run() {
         while (!popularTweetFinderThread.isInterrupted()) {
             try {
-                Thread.sleep(1000L * 60 * 5);
-                logger.info("save to database");
-                tweetFetcher.saveStatusesToDatabase();
+                Thread.sleep(1000L * 60 * 3);
             } catch (InterruptedException e) {
                 logger.error(e);
                 Thread.currentThread().interrupt();

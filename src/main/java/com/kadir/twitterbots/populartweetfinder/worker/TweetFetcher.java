@@ -16,6 +16,9 @@ import twitter4j.Status;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -23,7 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author akadir
@@ -33,6 +36,9 @@ import java.util.Set;
 public class TweetFetcher implements Runnable {
     private final Logger logger = Logger.getLogger(this.getClass());
 
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private Map<Long, CustomStatus> fetchedStatusMap = new HashMap<>();
+
     private String languageKey;
     private Twitter twitter;
     private TweetFilter tweetFilter;
@@ -40,30 +46,24 @@ public class TweetFetcher implements Runnable {
     private StatusDao statusDao;
     private int statusLimitToKeep;
 
-    private Map<Long, CustomStatus> fetchedStatusMap = new HashMap<>();
 
     public TweetFetcher(Twitter twitter) {
         this.twitter = twitter;
         loadArguments();
         tweetFilter = new TweetFilter(twitter);
         statusDao = new StatusDao();
+        addTodaysStatusesIntoMap();
     }
 
     public void run() {
-        while (true) {
+        while (!fetchThread.isInterrupted()) {
             try {
-                if (!fetchThread.isInterrupted()) {
-                    fetchTweets();
-                } else {
-                    saveStatusesToDatabase();
-                    break;
-                }
+                fetchTweets();
             } catch (TwitterException e) {
                 logger.error("Error while fetching tweets.", e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 logger.error(e);
-                logger.info("INTERRUPTED");
             }
         }
     }
@@ -87,12 +87,12 @@ public class TweetFetcher implements Runnable {
         Query query = new Query("lang:" + languageKey);
         query.setCount(100);
         query.setResultType(Query.RECENT);
-        query.since(ApplicationConstants.DATE_FORMAT.format(new Date()));
+        query.since(simpleDateFormat.format(new Date()));
 
         do {
             QueryResult result = twitter.search(query);
             statuses = result.getTweets();
-            logger.debug("Fetched " + statuses.size() + " statuses. max id: " + result.getMaxId() + " completed in: " + result.getCompletedIn());
+            logger.debug("Fetch " + statuses.size() + " statuses. Completed in: " + result.getCompletedIn());
 
             for (Status status : statuses) {
                 checkStatus(status);
@@ -121,92 +121,108 @@ public class TweetFetcher implements Runnable {
         }
     }
 
-    private void addStatus(Status status) throws InterruptedException {
-        CustomStatus customStatus;
-
-        if (fetchedStatusMap.containsKey(status.getId())) {
-            customStatus = fetchedStatusMap.get(status.getId());
-            customStatus.setScore(StatusUtil.calculateInteractionCount(status));
-            fetchedStatusMap.put(status.getId(), customStatus);
-            logger.info("Update status score from map. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
-        } else if (fetchedStatusMap.size() < statusLimitToKeep) {
-            customStatus = new CustomStatus(status);
-            fetchedStatusMap.put(status.getId(), new CustomStatus(status));
-            logger.info("Save status into map. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+    private void addStatus(Status newFetchedStatus) throws InterruptedException {
+        CustomStatus customStatus = fetchedStatusMap.get(newFetchedStatus.getId());
+        if (customStatus != null) {
+            if (customStatus.getScore() != StatusUtil.calculateInteractionCount(newFetchedStatus)) {
+                customStatus.setScore(StatusUtil.calculateInteractionCount(newFetchedStatus));
+                logger.info("Update status score in map. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+            }
+        } else {
+            CustomStatus alreadyMappedStatus = getAnotherStatusOfUserIfExist(newFetchedStatus);
+            if (alreadyMappedStatus != null) {
+                if (alreadyMappedStatus.getScore() < StatusUtil.calculateInteractionCount(newFetchedStatus)) {
+                    replaceUserStatusByStatusScore(alreadyMappedStatus, newFetchedStatus);
+                }
+            } else {
+                customStatus = new CustomStatus(newFetchedStatus);
+                fetchedStatusMap.put(newFetchedStatus.getId(), new CustomStatus(newFetchedStatus));
+                logger.info("Save status into map. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+            }
         }
 
         if (fetchedStatusMap.size() > statusLimitToKeep) {
-            removeLowestInteractionStatusesFromMap();
+            removeStatusesWithLowestInteractionFromMap();
         }
     }
 
-    private void removeLowestInteractionStatusesFromMap() throws InterruptedException {
+    private void replaceUserStatusByStatusScore(CustomStatus alreadyMappedStatus, Status status) {
+        CustomStatus newFetchedStatus = new CustomStatus(status);
+        fetchedStatusMap.remove(alreadyMappedStatus.getStatusId());
+        fetchedStatusMap.put(status.getId(), newFetchedStatus);
+        logger.info("Replace user status. " + newFetchedStatus.getScore() + " - " + newFetchedStatus.getStatusLink());
+    }
+
+    private CustomStatus getAnotherStatusOfUserIfExist(Status status) {
+        List<CustomStatus> userStatusList = fetchedStatusMap.values().stream()
+                .filter(value -> value.getUserId() == status.getUser().getId())
+                .collect(Collectors.toList());
+
+        return !userStatusList.isEmpty() ? userStatusList.get(0) : null;
+    }
+
+    private void removeStatusesWithLowestInteractionFromMap() throws InterruptedException {
         List<CustomStatus> customStatusList = new ArrayList<>(fetchedStatusMap.values());
 
         removeDeletedStatuses(customStatusList);
 
         if (fetchedStatusMap.size() > statusLimitToKeep) {
-            customStatusList.sort(Comparator.comparing(CustomStatus::getScore));
+            customStatusList.sort(Comparator.comparing(CustomStatus::getScore).reversed());
             for (int i = statusLimitToKeep; i < customStatusList.size(); i++) {
                 CustomStatus customStatus = fetchedStatusMap.remove(customStatusList.get(i).getStatusId());
                 if (customStatus != null) {
-                    logger.info("status removed from map: " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                    logger.info("Remove status from map: " + customStatus.getScore() + " - " + customStatus.getStatusLink());
                 }
             }
 
-            for (CustomStatus status : fetchedStatusMap.values()) {
-                if (status.getScore() < InteractionCountFilter.getMinInteractionCount()) {
-                    InteractionCountFilter.setMinInteractionCount(status.getScore());
-                }
+            setMinInteractionCount();
+        }
+    }
+
+    private void setMinInteractionCount() {
+        int tempMinScore = -1;
+        for (CustomStatus status : fetchedStatusMap.values()) {
+            if (tempMinScore == -1 || status.getScore() < tempMinScore) {
+                tempMinScore = status.getScore();
             }
         }
+        InteractionCountFilter.setMinInteractionCount(tempMinScore);
+        logger.info("Set minInteractionCount:" + InteractionCountFilter.getMinInteractionCount());
     }
 
     private void removeDeletedStatuses(List<CustomStatus> customStatusList) throws InterruptedException {
         Iterator<CustomStatus> iterator = customStatusList.iterator();
+        LocalDateTime now = LocalDateTime.now();
 
         while (iterator.hasNext()) {
             CustomStatus customStatus = iterator.next();
-            try {
-                Status s = twitter.showStatus(customStatus.getStatusId());
-                customStatus = new CustomStatus(s);
-                fetchedStatusMap.put(customStatus.getStatusId(), customStatus);
-                RateLimitHandler.handle(twitter.getId(), s.getRateLimitStatus(), ApiProcessType.SHOW_STATUS);
-            } catch (TwitterException e) {
-                if (e.getErrorCode() == 144) {
-                    fetchedStatusMap.remove(customStatus.getStatusId());
-                    iterator.remove();
+            if (ChronoUnit.MINUTES.between(customStatus.getFetchedAt(), now) > ApplicationConstants.CHECK_DELETED_STATUSES_PERIOD) {
+                try {
+                    Status s = twitter.showStatus(customStatus.getStatusId());
+                    customStatus = new CustomStatus(s);
+                    fetchedStatusMap.put(customStatus.getStatusId(), customStatus);
+                    RateLimitHandler.handle(twitter.getId(), s.getRateLimitStatus(), ApiProcessType.SHOW_STATUS);
+                } catch (TwitterException e) {
+                    if (e.getErrorCode() == 144) {
+                        fetchedStatusMap.remove(customStatus.getStatusId());
+                        iterator.remove();
+                    }
+                    logger.error(e);
                 }
-                logger.error(e);
             }
         }
     }
 
-    public void saveStatusesToDatabase() {
-        List<CustomStatus> savedStatuses = statusDao.getTodaysStatuses();
-        List<CustomStatus> fetchedStatuses = new ArrayList<>(fetchedStatusMap.values());
+    private void addTodaysStatusesIntoMap() {
+        List<CustomStatus> todaysStatuses = statusDao.getTodaysStatuses();
 
-        if (savedStatuses.isEmpty()) {
-            statusDao.saveAll(fetchedStatuses);
-            logger.info("Statuses saved into database. Size: " + fetchedStatuses.size());
-        } else {
-            Set<Long> fetchedStatusIdSet = fetchedStatusMap.keySet();
-            for (CustomStatus customStatus : fetchedStatuses) {
-                if (customStatus.getId() == null) {
-                    statusDao.saveStatus(customStatus);
-                    logger.info("Status saved into database. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
-                } else {
-                    statusDao.updateTodaysStatusScore(customStatus.getStatusId(), customStatus.getScore());
-                    logger.info("Status score updated. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
-                }
-            }
+        for (CustomStatus customStatus : todaysStatuses) {
+            fetchedStatusMap.put(customStatus.getStatusId(), customStatus);
+            logger.info("Load status from database. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+        }
 
-            for (CustomStatus savedStatus : savedStatuses) {
-                if (!fetchedStatusIdSet.contains(savedStatus.getStatusId())) {
-                    statusDao.removeStatus(savedStatus);
-                    logger.info("Status removed from database. " + savedStatus.getScore() + " - " + savedStatus.getStatusLink());
-                }
-            }
+        if (fetchedStatusMap.size() > 0) {
+            setMinInteractionCount();
         }
     }
 
@@ -218,5 +234,9 @@ public class TweetFetcher implements Runnable {
         } else {
             logger.info("Set languageKey:" + languageKey);
         }
+    }
+
+    public Map<Long, CustomStatus> getFetchedStatusMap() {
+        return fetchedStatusMap;
     }
 }

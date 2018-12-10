@@ -25,15 +25,16 @@ public class TweetFilter {
 
     public TweetFilter(Twitter twitter) {
         userBasedFilter = new UserBasedFilter(twitter);
-        addFiltersToSet(twitter);
+        addFiltersToSet();
         userBasedFilter.start();
     }
 
-    private void addFiltersToSet(Twitter twitter) {
+    private void addFiltersToSet() {
         filterList.add(new DateFilter());
         filterList.add(userBasedFilter);
         filterList.add(new InteractionCountFilter());
         filterList.add(new ContentBasedFilter());
+        logger.info("Initialise filters");
     }
 
     public boolean canStatusBeUsed(Status status) {

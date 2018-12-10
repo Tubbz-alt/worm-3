@@ -18,6 +18,9 @@ public class DatabaseConnector {
     private static final String DATABASE_URL = "jdbc:sqlite:" + ApplicationConstants.RESOURCES_FOLDER_NAME + "popularTweetsDb";
     private static Connection connection;
 
+    private DatabaseConnector() {
+    }
+
     public static Connection getConnection() throws SQLException {
         return openConnection();
     }

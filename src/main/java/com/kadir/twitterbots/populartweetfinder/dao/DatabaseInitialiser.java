@@ -15,7 +15,8 @@ import java.sql.Statement;
 public class DatabaseInitialiser {
     private static final Logger logger = Logger.getLogger(DatabaseInitialiser.class);
 
-    private static Connection connection;
+    private DatabaseInitialiser() {
+    }
 
     public static void initializeDatabase() {
         try {
@@ -29,11 +30,12 @@ public class DatabaseInitialiser {
     }
 
     private static void createTablesIfNotExist() throws SQLException {
-        connection = DatabaseConnector.getConnection();
+        Connection connection = DatabaseConnector.getConnection();
         try (Statement statement = connection.createStatement()) {
             createPopularTweetsTableIfNotExist(statement);
             createIgnoredUsersTableIfNotExist(statement);
             createSinceIdTableIfNotExist(statement);
+            createIgnoredWordsTableIfNotExist(statement);
         }
     }
 
@@ -64,7 +66,18 @@ public class DatabaseInitialiser {
                 "userId INTEGER UNIQUE NOT NULL," +
                 "screenName TEXT NOT NULL," +
                 "createdDate DATE DEFAULT (datetime('now','localtime'))," +
-                "passiveSince TEXT DEFAULT '');";
+                "passiveSince TEXT DEFAULT ''," +
+                "lastCheck TEXT DEFAULT '');";
+        statement.execute(sql);
+    }
+
+    private static void createIgnoredWordsTableIfNotExist(Statement statement) throws SQLException {
+        String sql = "CREATE TABLE IF NOT EXISTS IgnoredWords(" +
+                "id INTEGER PRIMARY KEY," +
+                "word TEXT UNIQUE NOT NULL," +
+                "type INTEGER NOT NULL," +
+                "createdDate DATE DEFAULT (datetime('now','localtime')));" +
+                "CREATE INDEX IgnoredWords_IX ON IgnoredWords(type);";
         statement.execute(sql);
     }
 

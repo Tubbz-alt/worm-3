@@ -6,6 +6,7 @@ import twitter4j.Status;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -26,6 +27,7 @@ public class CustomStatus {
     private String quotedDate;
     private String statusLink;
     private String statusText;
+    private LocalDateTime fetchedAt;
 
     public CustomStatus(ResultSet resultSet) throws SQLException {
         getFromResultSet(resultSet);
@@ -46,6 +48,7 @@ public class CustomStatus {
         quotedDate = resultSet.getString("quotedDate");
         statusLink = resultSet.getString("statusLink");
         statusText = resultSet.getString("statusText");
+        fetchedAt = LocalDateTime.now();
     }
 
     private void getFromStatus(Status status) {
@@ -59,6 +62,7 @@ public class CustomStatus {
         quotedDate = "";
         statusLink = StatusUtil.getStatusLink(status);
         statusText = status.getText();
+        fetchedAt = LocalDateTime.now();
     }
 
     public String getStatusInformation() {
@@ -143,5 +147,13 @@ public class CustomStatus {
 
     public void setStatusText(String statusText) {
         this.statusText = statusText;
+    }
+
+    public LocalDateTime getFetchedAt() {
+        return fetchedAt;
+    }
+
+    public void setFetchedAt(LocalDateTime fetchedAt) {
+        this.fetchedAt = fetchedAt;
     }
 }

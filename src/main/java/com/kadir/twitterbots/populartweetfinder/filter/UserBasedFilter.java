@@ -67,7 +67,7 @@ public class UserBasedFilter implements StatusFilter, Runnable {
                     logger.info("Ignored users cleaned up.");
                     loadIgnoredUsers();
                     logger.info("Sleep 1 hour.");
-                    Thread.sleep(1000 * 60 * 60);
+                    Thread.sleep(1000L * 60 * 60);
                 } else {
                     break;
                 }
@@ -101,7 +101,7 @@ public class UserBasedFilter implements StatusFilter, Runnable {
             if (!ignoredUsersSet.contains(user.getId())) {
                 userDao.insertIgnoredUser(user);
                 ignoredUsersSet.add(user.getId());
-                logger.info("new user added into ignored users as it seems like parody account: " + user.getScreenName());
+                logger.info("Add into ignored users as it seems like parody account: " + user.getScreenName());
             }
             wouldBe = true;
         }

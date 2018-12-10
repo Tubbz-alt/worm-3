@@ -31,9 +31,9 @@ public class StatusDao {
         }
     }
 
-    public void saveStatus(CustomStatus status) {
+    public Long saveStatus(CustomStatus status) {
         PreparedStatement preparedStatement = null;
-
+        Long id = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
             preparedStatement = conn.prepareStatement("INSERT INTO PopularTweets(statusId, userId, score, foundDate, statusCreationDate, isQuoted, quotedDate, statusLink, statusText) " +
@@ -47,12 +47,25 @@ public class StatusDao {
             preparedStatement.setString(7, "");
             preparedStatement.setString(8, status.getStatusLink());
             preparedStatement.setString(9, status.getStatusText());
-            preparedStatement.executeUpdate();
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Insert status failed, no rows affected.");
+            }
+
+            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    id = generatedKeys.getLong(1);
+                } else {
+                    throw new SQLException("Insert status failed, no ID obtained.");
+                }
+            }
         } catch (SQLException e) {
             logger.error(e);
         } finally {
             closeStatement(preparedStatement);
         }
+        return id;
     }
 
     public void updateStatus(CustomStatus customStatus) {
