@@ -70,7 +70,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
     }
 
     public void schedule() {
-        scheduledFuture = executorService.scheduleWithFixedDelay(this, 0, 1, TimeUnit.MINUTES);
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, 0, 5, TimeUnit.MINUTES);
         TaskScheduler.addScheduledTask(this);
     }
 
