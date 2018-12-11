@@ -35,7 +35,7 @@ public class DatabaseInitialiser {
             createPopularTweetsTableIfNotExist(statement);
             createIgnoredUsersTableIfNotExist(statement);
             createSinceIdTableIfNotExist(statement);
-            createIgnoredWordsTableIfNotExist(statement);
+            createIgnoredKeywordsTableIfNotExist(statement);
         }
     }
 
@@ -71,8 +71,8 @@ public class DatabaseInitialiser {
         statement.execute(sql);
     }
 
-    private static void createIgnoredWordsTableIfNotExist(Statement statement) throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS IgnoredWords(" +
+    private static void createIgnoredKeywordsTableIfNotExist(Statement statement) throws SQLException {
+        String sql = "CREATE TABLE IF NOT EXISTS IgnoredKeyWords(" +
                 "id INTEGER PRIMARY KEY," +
                 "word TEXT UNIQUE NOT NULL," +
                 "type INTEGER NOT NULL," +
