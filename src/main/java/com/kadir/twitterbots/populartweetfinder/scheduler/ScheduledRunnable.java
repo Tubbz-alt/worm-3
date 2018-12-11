@@ -1,6 +1,6 @@
 package com.kadir.twitterbots.populartweetfinder.scheduler;
 
-import java.util.concurrent.ScheduledFuture;
+import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
 
 /**
  * @author akadir
@@ -8,7 +8,10 @@ import java.util.concurrent.ScheduledFuture;
  * Time: 11:18
  */
 public interface ScheduledRunnable extends Runnable {
+
+    void schedule();
+
     void cancel();
 
-    void setScheduledFuture(ScheduledFuture<?> scheduledFuture);
+    TaskPriority getPriority();
 }

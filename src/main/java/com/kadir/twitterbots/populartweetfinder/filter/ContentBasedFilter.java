@@ -2,9 +2,12 @@ package com.kadir.twitterbots.populartweetfinder.filter;
 
 import com.google.common.base.Optional;
 import com.kadir.twitterbots.populartweetfinder.dao.ContentFilterDao;
+import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
 import com.kadir.twitterbots.populartweetfinder.exceptions.IllegalLanguageKeyException;
 import com.kadir.twitterbots.populartweetfinder.exceptions.LanguageIdentifierInitialisingException;
-import com.kadir.twitterbots.populartweetfinder.scheduler.ScheduledRunnable;
+import com.kadir.twitterbots.populartweetfinder.scheduler.BaseScheduledRunnable;
+import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
+import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
@@ -25,14 +28,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author akadir
  * Date: 08/12/2018
  * Time: 20:29
  */
-public class ContentBasedFilter implements StatusFilter, ScheduledRunnable {
+public class ContentBasedFilter extends BaseScheduledRunnable implements StatusFilter {
     private final Logger logger = Logger.getLogger(this.getClass());
 
     private String languageKey;
@@ -41,9 +45,9 @@ public class ContentBasedFilter implements StatusFilter, ScheduledRunnable {
     private ContentFilterDao contentFilterDao;
     private Set<String> ignoredWords;
     private Set<String> ignoredUsernames;
-    private volatile ScheduledFuture<?> scheduledFuture;
 
     public ContentBasedFilter() {
+        super(TaskPriority.LOW);
         init();
     }
 
@@ -52,10 +56,17 @@ public class ContentBasedFilter implements StatusFilter, ScheduledRunnable {
         if (DataUtil.isNullOrEmpty(languageKey)) {
             throw new IllegalLanguageKeyException(languageKey);
         }
-        logger.info("Set languageKey:" + languageKey);
+        logger.debug("Set languageKey:" + languageKey);
         initializeLanguageIdentifiers();
         contentFilterDao = new ContentFilterDao();
         loadIgnoredKeyWords();
+        executorService = Executors.newScheduledThreadPool(1);
+    }
+
+    @Override
+    public void schedule() {
+        executorService.scheduleWithFixedDelay(this, ApplicationConstants.INITIAL_DELAY_FOR_SCHEDULED_TASKS, ApplicationConstants.DELAY_FOR_SCHEDULED_TASKS, TimeUnit.MINUTES);
+        TaskScheduler.addScheduledTask(this);
     }
 
     /**
@@ -74,17 +85,6 @@ public class ContentBasedFilter implements StatusFilter, ScheduledRunnable {
         logger.info("run scheduled task: " + this.getClass().getSimpleName());
         loadIgnoredKeyWords();
     }
-
-    public void cancel() {
-        scheduledFuture.cancel(true);
-        logger.info("cancel scheduled task: " + this.getClass().getSimpleName());
-    }
-
-    @Override
-    public void setScheduledFuture(ScheduledFuture<?> scheduledFuture) {
-        this.scheduledFuture = scheduledFuture;
-    }
-
 
     @Override
     public boolean passed(Status status) {

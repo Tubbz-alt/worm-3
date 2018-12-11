@@ -1,11 +1,15 @@
 package com.kadir.twitterbots.populartweetfinder.worker;
 
+import com.kadir.twitterbots.populartweetfinder.authentication.BotAuthenticator;
 import com.kadir.twitterbots.populartweetfinder.dao.StatusDao;
 import com.kadir.twitterbots.populartweetfinder.entity.ApiProcessType;
 import com.kadir.twitterbots.populartweetfinder.entity.CustomStatus;
+import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
 import com.kadir.twitterbots.populartweetfinder.exceptions.IllegalLanguageKeyException;
 import com.kadir.twitterbots.populartweetfinder.filter.InteractionCountFilter;
 import com.kadir.twitterbots.populartweetfinder.handler.RateLimitHandler;
+import com.kadir.twitterbots.populartweetfinder.scheduler.BaseScheduledRunnable;
+import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
 import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import com.kadir.twitterbots.populartweetfinder.util.StatusUtil;
@@ -26,6 +30,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -33,53 +39,66 @@ import java.util.stream.Collectors;
  * Date: 08/12/2018
  * Time: 15:10
  */
-public class TweetFetcher implements Runnable {
+public class TweetFetcher extends BaseScheduledRunnable {
     private final Logger logger = Logger.getLogger(this.getClass());
 
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
     private Map<Long, CustomStatus> fetchedStatusMap = new HashMap<>();
+    private boolean isCancelled = false;
 
     private String languageKey;
+    private int statusLimitToKeep;
     private Twitter twitter;
     private TweetFilter tweetFilter;
-    private Thread fetchThread;
+    private DatabaseWorker databaseWorker;
     private StatusDao statusDao;
-    private int statusLimitToKeep;
 
-
-    public TweetFetcher(Twitter twitter, TweetFilter tweetFilter) {
+    public TweetFetcher() {
+        super(TaskPriority.LOW);
         loadArguments();
-        this.twitter = twitter;
-        this.tweetFilter = tweetFilter;
+        authenticate();
+
+        tweetFilter = new TweetFilter();
+        tweetFilter.initForFetch(twitter);
+
+        databaseWorker = new DatabaseWorker(this);
+        databaseWorker.schedule();
+
         statusDao = new StatusDao();
         addTodaysStatusesIntoMap();
+        executorService = Executors.newScheduledThreadPool(1);
+    }
+
+    public void schedule() {
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, 0, 1, TimeUnit.MINUTES);
+        TaskScheduler.addScheduledTask(this);
     }
 
     public void run() {
-        while (!fetchThread.isInterrupted()) {
-            try {
-                fetchTweets();
-            } catch (TwitterException e) {
-                logger.error("Error while fetching tweets.", e);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.error(e);
-            }
+        try {
+            fetchTweets();
+        } catch (TwitterException e) {
+            logger.error("Error while fetching tweets.", e);
+        } catch (InterruptedException e) {
+            logger.error(e);
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            logger.error(e);
         }
     }
 
-    public void start() {
-        logger.info("Starting tweet fetch thread");
-        if (fetchThread == null) {
-            fetchThread = new Thread(this, this.getClass().getSimpleName());
-            fetchThread.start();
-            logger.info("tweet fetch thread started");
-        }
+    @Override
+    public void cancel() {
+        isCancelled = true;
+        super.cancel();
     }
 
-    public void interrupt() throws InterruptedException {
-        fetchThread.interrupt();
-        fetchThread.join();
+    private void authenticate() {
+        String consumerKey = System.getProperty("finderConsumerKey");
+        String consumerSecret = System.getProperty("finderConsumerSecret");
+        String accessToken = System.getProperty("finderAccessToken");
+        String accessTokenSecret = System.getProperty("finderAccessTokenSecret");
+        twitter = BotAuthenticator.authenticate(consumerKey, consumerSecret, accessToken, accessTokenSecret);
     }
 
     private void fetchTweets() throws TwitterException, InterruptedException {
@@ -92,7 +111,7 @@ public class TweetFetcher implements Runnable {
         do {
             QueryResult result = twitter.search(query);
             statuses = result.getTweets();
-            logger.debug("Fetch " + statuses.size() + " statuses. Completed in: " + result.getCompletedIn());
+            logger.info("Fetch " + statuses.size() + " statuses. Completed in: " + result.getCompletedIn());
 
             for (Status status : statuses) {
                 checkStatus(status);
@@ -100,7 +119,7 @@ public class TweetFetcher implements Runnable {
 
             query = result.nextQuery();
             RateLimitHandler.handle(twitter.getId(), result.getRateLimitStatus(), ApiProcessType.SEARCH);
-        } while (query != null);
+        } while (query != null && !isCancelled);
     }
 
     private void checkStatus(Status status) throws InterruptedException {
@@ -218,10 +237,11 @@ public class TweetFetcher implements Runnable {
 
         for (CustomStatus customStatus : todaysStatuses) {
             fetchedStatusMap.put(customStatus.getStatusId(), customStatus);
-            logger.info("Load status from database. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+            logger.debug("Load status from database. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
         }
 
         if (fetchedStatusMap.size() > 0) {
+            logger.info("load status from database: " + fetchedStatusMap.size());
             setMinInteractionCount();
         }
     }
@@ -232,7 +252,7 @@ public class TweetFetcher implements Runnable {
         if (DataUtil.isNullOrEmpty(languageKey)) {
             throw new IllegalLanguageKeyException(languageKey);
         } else {
-            logger.info("Set languageKey:" + languageKey);
+            logger.debug("Set languageKey:" + languageKey);
         }
     }
 

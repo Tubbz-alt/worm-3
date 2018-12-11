@@ -10,7 +10,7 @@ public enum IgnoredWordType {
 
     private int type;
 
-    private IgnoredWordType(int type) {
+    IgnoredWordType(int type) {
         this.type = type;
     }
 

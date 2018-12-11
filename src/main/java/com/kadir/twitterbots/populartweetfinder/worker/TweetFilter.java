@@ -6,9 +6,6 @@ import com.kadir.twitterbots.populartweetfinder.filter.InteractionCountFilter;
 import com.kadir.twitterbots.populartweetfinder.filter.StatusFilter;
 import com.kadir.twitterbots.populartweetfinder.filter.UserBasedFilter;
 import com.kadir.twitterbots.populartweetfinder.scheduler.ScheduledRunnable;
-import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
-import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
-import org.apache.log4j.Logger;
 import twitter4j.Status;
 import twitter4j.Twitter;
 
@@ -21,14 +18,24 @@ import java.util.List;
  * Time: 15:15
  */
 public class TweetFilter {
-    private final Logger logger = Logger.getLogger(this.getClass());
-
     private List<StatusFilter> filters;
 
-    public TweetFilter() {
+    public void initForFetch(Twitter twitter) {
+        createFetchFilters(twitter);
+        scheduleTasksForRunnableFilters();
     }
 
-    public void createFilters(Twitter twitter) {
+    public void initForQuote(Twitter twitter) {
+        createQuoteFilters(twitter);
+    }
+
+    private void createQuoteFilters(Twitter twitter) {
+        filters = new ArrayList<>();
+        filters.add(new ContentBasedFilter());
+        filters.add(new UserBasedFilter(twitter));
+    }
+
+    private void createFetchFilters(Twitter twitter) {
         filters = new ArrayList<>();
         filters.add(new ContentBasedFilter());
         filters.add(new DateFilter());
@@ -36,10 +43,10 @@ public class TweetFilter {
         filters.add(new UserBasedFilter(twitter));
     }
 
-    public void scheduleTasksForRunnableFilters() {
+    private void scheduleTasksForRunnableFilters() {
         for (StatusFilter s : filters) {
             if (s instanceof ScheduledRunnable) {
-                TaskScheduler.scheduleWithFixedDelay((ScheduledRunnable) s, ApplicationConstants.INITIAL_DELAY_FOR_SCHEDULED_TASKS, ApplicationConstants.DELAY_FOR_SCHEDULED_TASKS);
+                ((ScheduledRunnable) s).schedule();
             }
         }
     }
@@ -52,5 +59,4 @@ public class TweetFilter {
         }
         return true;
     }
-
 }

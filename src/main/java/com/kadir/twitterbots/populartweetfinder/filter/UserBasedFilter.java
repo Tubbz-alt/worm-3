@@ -3,8 +3,10 @@ package com.kadir.twitterbots.populartweetfinder.filter;
 import com.kadir.twitterbots.populartweetfinder.dao.UserDao;
 import com.kadir.twitterbots.populartweetfinder.entity.ApiProcessType;
 import com.kadir.twitterbots.populartweetfinder.entity.IgnoredUser;
+import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
 import com.kadir.twitterbots.populartweetfinder.handler.RateLimitHandler;
-import com.kadir.twitterbots.populartweetfinder.scheduler.ScheduledRunnable;
+import com.kadir.twitterbots.populartweetfinder.scheduler.BaseScheduledRunnable;
+import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
 import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import org.apache.log4j.Logger;
@@ -18,35 +20,47 @@ import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author akadir
  * Date: 08/12/2018
  * Time: 18:57
  */
-public class UserBasedFilter implements StatusFilter, ScheduledRunnable {
+public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilter {
     private final Logger logger = Logger.getLogger(this.getClass());
+
     private int minFollowingCount;
     private int maxFollowingCount;
     private int maxFollowersCount;
     private UserDao userDao = new UserDao();
     private Set<Long> ignoredUsersSet = new HashSet<>();
+    private boolean isCancelled = false;
     private Twitter twitter;
-    private volatile ScheduledFuture<?> scheduledFuture;
 
     public UserBasedFilter(Twitter twitter) {
+        super(TaskPriority.LOW);
+        executorService = Executors.newScheduledThreadPool(1);
         this.twitter = twitter;
-        logger.info(this.getClass().getSimpleName() + " created");
+        logger.debug(this.getClass().getSimpleName() + " created");
         this.minFollowingCount = Integer.parseInt(System.getProperty("minFollowingCount", "20"));
-        logger.info("Set minFollowingCount:" + minFollowingCount);
+        logger.debug("Set minFollowingCount:" + minFollowingCount);
         this.maxFollowingCount = Integer.parseInt(System.getProperty("maxFollowingCount", "2000"));
-        logger.info("Set maxFollowingCount:" + maxFollowingCount);
+        logger.debug("Set maxFollowingCount:" + maxFollowingCount);
         this.maxFollowersCount = Integer.parseInt(System.getProperty("maxFollowersCount", "200000"));
-        logger.info("Set maxFollowersCount:" + maxFollowersCount);
+        logger.debug("Set maxFollowersCount:" + maxFollowersCount);
         loadIgnoredUsers();
     }
+
+    @Override
+    public void schedule() {
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, ApplicationConstants.INITIAL_DELAY_FOR_SCHEDULED_TASKS, ApplicationConstants.DELAY_FOR_SCHEDULED_TASKS, TimeUnit.MINUTES);
+        TaskScheduler.addScheduledTask(this);
+    }
+
 
     /**
      * When an object implementing interface <code>Runnable</code> is used
@@ -64,16 +78,13 @@ public class UserBasedFilter implements StatusFilter, ScheduledRunnable {
         logger.info("run scheduled task: " + this.getClass().getSimpleName());
         cleanUpIgnoredUsers();
         loadIgnoredUsers();
-    }
-
-    public void cancel() {
-        scheduledFuture.cancel(true);
-        logger.info("cancel scheduled task: " + this.getClass().getSimpleName());
+        logger.info("finish scheduled task: " + this.getClass().getSimpleName());
     }
 
     @Override
-    public void setScheduledFuture(ScheduledFuture<?> scheduledFuture) {
-        this.scheduledFuture = scheduledFuture;
+    public void cancel() {
+        isCancelled = true;
+        super.cancel();
     }
 
     @Override
@@ -110,7 +121,9 @@ public class UserBasedFilter implements StatusFilter, ScheduledRunnable {
 
     private void cleanUpIgnoredUsers() {
         Set<IgnoredUser> ignoredUsers = userDao.getIgnoredUsers();
-        for (IgnoredUser ignoredUser : ignoredUsers) {
+        Iterator<IgnoredUser> iterator = ignoredUsers.iterator();
+        while (iterator.hasNext() && !isCancelled) {
+            IgnoredUser ignoredUser = iterator.next();
             try {
                 if (wouldBeRemoved(ignoredUser)) {
                     userDao.deleteIgnoredUser(ignoredUser);

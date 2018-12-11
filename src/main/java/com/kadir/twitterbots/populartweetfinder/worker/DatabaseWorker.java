@@ -2,30 +2,46 @@ package com.kadir.twitterbots.populartweetfinder.worker;
 
 import com.kadir.twitterbots.populartweetfinder.dao.StatusDao;
 import com.kadir.twitterbots.populartweetfinder.entity.CustomStatus;
-import com.kadir.twitterbots.populartweetfinder.scheduler.ScheduledRunnable;
+import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
+import com.kadir.twitterbots.populartweetfinder.scheduler.BaseScheduledRunnable;
+import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author akadir
  * Date: 10/12/2018
  * Time: 20:17
  */
-public class DatabaseWorker implements ScheduledRunnable {
+public class DatabaseWorker extends BaseScheduledRunnable {
     private final Logger logger = Logger.getLogger(this.getClass());
 
     private TweetFetcher tweetFetcher;
     private StatusDao statusDao;
-    private volatile ScheduledFuture<?> scheduledFuture;
 
     public DatabaseWorker(TweetFetcher tweetFetcher) {
+        super(TaskPriority.HIGH);
+        executorService = Executors.newScheduledThreadPool(1);
         this.tweetFetcher = tweetFetcher;
         statusDao = new StatusDao();
+    }
+
+    @Override
+    public void schedule() {
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, 2, 30, TimeUnit.MINUTES);
+        TaskScheduler.addScheduledTask(this);
+    }
+
+    @Override
+    public void cancel() {
+        saveStatusesToDatabase();
+        super.cancel();
     }
 
     /**
@@ -41,19 +57,12 @@ public class DatabaseWorker implements ScheduledRunnable {
      */
     @Override
     public void run() {
-        logger.info("Run database worker");
-        saveStatusesToDatabase();
-    }
-
-    @Override
-    public void cancel() {
-        scheduledFuture.cancel(false);
-        logger.info("cancel scheduled task: " + this.getClass().getSimpleName());
-    }
-
-    @Override
-    public void setScheduledFuture(ScheduledFuture<?> scheduledFuture) {
-        this.scheduledFuture = scheduledFuture;
+        try {
+            logger.info("Run database worker");
+            saveStatusesToDatabase();
+        } catch (Exception e) {
+            logger.error(e);
+        }
     }
 
     public void saveStatusesToDatabase() {
@@ -65,7 +74,7 @@ public class DatabaseWorker implements ScheduledRunnable {
             for (CustomStatus customStatus : fetchedStatuses) {
                 Long id = statusDao.saveStatus(customStatus);
                 customStatus.setId(id);
-                logger.info("Save status into database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                logger.debug("Save status into database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
             }
         } else {
             Set<Long> fetchedStatusIdSet = fetchedStatusMap.keySet();
@@ -73,19 +82,20 @@ public class DatabaseWorker implements ScheduledRunnable {
                 if (customStatus.getId() == null) {
                     Long id = statusDao.saveStatus(customStatus);
                     customStatus.setId(id);
-                    logger.info("Status saved into database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                    logger.debug("Status saved into database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
                 } else {
                     statusDao.updateTodaysStatusScore(customStatus.getStatusId(), customStatus.getScore());
-                    logger.info("Update status score in database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                    logger.debug("Update status score in database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
                 }
             }
 
             for (CustomStatus customStatus : savedStatuses) {
                 if (!fetchedStatusIdSet.contains(customStatus.getStatusId())) {
                     statusDao.removeStatus(customStatus);
-                    logger.info("Status removed from database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                    logger.debug("Status removed from database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
                 }
             }
         }
+        logger.info("refresh database statuses");
     }
 }

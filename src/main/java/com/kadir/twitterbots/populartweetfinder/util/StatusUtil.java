@@ -43,5 +43,4 @@ public class StatusUtil {
             return (int) (score * (currentHour / totalHourPassed));
         }
     }
-
 }

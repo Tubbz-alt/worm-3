@@ -1,5 +1,6 @@
 package com.kadir.twitterbots.populartweetfinder.authentication;
 
+import com.kadir.twitterbots.populartweetfinder.exceptions.IllegalApiTokenException;
 import com.kadir.twitterbots.populartweetfinder.exceptions.TwitterAuthenticationException;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import org.apache.log4j.Logger;
@@ -20,26 +21,17 @@ import java.io.InputStreamReader;
  * Date: 08/12/2018
  * Time: 13:35
  */
-public class BotAuthentication {
-    private final Logger logger = Logger.getLogger(this.getClass());
+public class BotAuthenticator {
+    private static final Logger logger = Logger.getLogger(BotAuthenticator.class);
 
-    private String consumerKey;
-    private String consumerSecret;
-    private String accessToken;
-    private String accessTokenSecret;
-
-    public BotAuthentication(String consumerKey, String consumerSecret, String accessToken, String accessTokenSecret) {
-        this.consumerKey = consumerKey;
-        this.consumerSecret = consumerSecret;
-        this.accessToken = accessToken;
-        this.accessTokenSecret = accessTokenSecret;
+    private BotAuthenticator() {
     }
 
-    public Twitter authenticate() {
+    public static Twitter authenticate(String consumerKey, String consumerSecret, String accessToken, String accessTokenSecret) {
         Twitter twitter = null;
         try {
-            validateTokens();
-            ConfigurationBuilder cb = buildConfigurationBuilder();
+            validateTokens(consumerKey, consumerSecret, accessToken, accessTokenSecret);
+            ConfigurationBuilder cb = buildConfigurationBuilder(consumerKey, consumerSecret, accessToken, accessTokenSecret);
 
             twitter = new TwitterFactory(cb.build()).getInstance();
             User authUser = twitter.showUser(twitter.verifyCredentials().getId());
@@ -52,7 +44,7 @@ public class BotAuthentication {
         return twitter;
     }
 
-    private ConfigurationBuilder buildConfigurationBuilder() {
+    private static ConfigurationBuilder buildConfigurationBuilder(String consumerKey, String consumerSecret, String accessToken, String accessTokenSecret) {
         return new ConfigurationBuilder()
                 .setOAuthConsumerKey(consumerKey)
                 .setOAuthConsumerSecret(consumerSecret)
@@ -60,15 +52,15 @@ public class BotAuthentication {
                 .setOAuthAccessTokenSecret(accessTokenSecret);
     }
 
-    private void validateTokens() throws TwitterException, IOException {
+    private static void validateTokens(String consumerKey, String consumerSecret, String accessToken, String accessTokenSecret) throws TwitterException, IOException {
         if (DataUtil.isNullOrEmpty(consumerKey) || DataUtil.isNullOrEmpty(consumerSecret)) {
-            throw new IllegalArgumentException("consumerKey or consumerSecret cannot be null or empty.");
+            throw new IllegalApiTokenException("consumerKey or consumerSecret cannot be null or empty.");
         } else if (DataUtil.isNullOrEmpty(accessToken) || DataUtil.isNullOrEmpty(accessTokenSecret)) {
-            getAccessTokenAndSecretFromTwitter();
+            getAccessTokenAndSecretFromTwitter(consumerKey, consumerSecret, accessToken, accessTokenSecret);
         }
     }
 
-    private void getAccessTokenAndSecretFromTwitter() throws TwitterException, IOException {
+    private static void getAccessTokenAndSecretFromTwitter(String consumerKey, String consumerSecret, String accessToken, String accessTokenSecret) throws TwitterException, IOException {
         Twitter twitter = TwitterFactory.getSingleton();
         twitter.setOAuthConsumer(consumerKey, consumerSecret);
 
@@ -86,6 +78,8 @@ public class BotAuthentication {
                 authAccessToken = twitter.getOAuthAccessToken(requestToken, pin);
                 accessToken = authAccessToken.getToken();
                 accessTokenSecret = authAccessToken.getTokenSecret();
+                logger.info("accessToken: " + accessToken);
+                logger.info("accessTokenSecret: " + accessTokenSecret);
             } else {
                 authAccessToken = twitter.getOAuthAccessToken();
             }
