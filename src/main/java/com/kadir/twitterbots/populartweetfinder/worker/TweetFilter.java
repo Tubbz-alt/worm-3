@@ -5,6 +5,9 @@ import com.kadir.twitterbots.populartweetfinder.filter.DateFilter;
 import com.kadir.twitterbots.populartweetfinder.filter.InteractionCountFilter;
 import com.kadir.twitterbots.populartweetfinder.filter.StatusFilter;
 import com.kadir.twitterbots.populartweetfinder.filter.UserBasedFilter;
+import com.kadir.twitterbots.populartweetfinder.scheduler.ScheduledRunnable;
+import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
+import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import org.apache.log4j.Logger;
 import twitter4j.Status;
 import twitter4j.Twitter;
@@ -20,29 +23,34 @@ import java.util.List;
 public class TweetFilter {
     private final Logger logger = Logger.getLogger(this.getClass());
 
-    private List<StatusFilter> filterList = new ArrayList<>();
-    private UserBasedFilter userBasedFilter;
+    private List<StatusFilter> filters;
 
-    public TweetFilter(Twitter twitter) {
-        userBasedFilter = new UserBasedFilter(twitter);
-        addFiltersToSet();
-        userBasedFilter.start();
+    public TweetFilter() {
     }
 
-    private void addFiltersToSet() {
-        filterList.add(new DateFilter());
-        filterList.add(userBasedFilter);
-        filterList.add(new InteractionCountFilter());
-        filterList.add(new ContentBasedFilter());
-        logger.info("Initialise filters");
+    public void createFilters(Twitter twitter) {
+        filters = new ArrayList<>();
+        filters.add(new ContentBasedFilter());
+        filters.add(new DateFilter());
+        filters.add(new InteractionCountFilter());
+        filters.add(new UserBasedFilter(twitter));
+    }
+
+    public void scheduleTasksForRunnableFilters() {
+        for (StatusFilter s : filters) {
+            if (s instanceof ScheduledRunnable) {
+                TaskScheduler.scheduleWithFixedDelay((ScheduledRunnable) s, ApplicationConstants.INITIAL_DELAY_FOR_SCHEDULED_TASKS, ApplicationConstants.DELAY_FOR_SCHEDULED_TASKS);
+            }
+        }
     }
 
     public boolean canStatusBeUsed(Status status) {
-        for (StatusFilter filter : filterList) {
+        for (StatusFilter filter : filters) {
             if (!filter.passed(status)) {
                 return false;
             }
         }
         return true;
     }
+
 }

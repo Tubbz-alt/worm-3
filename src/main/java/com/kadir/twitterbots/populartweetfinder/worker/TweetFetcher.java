@@ -47,10 +47,10 @@ public class TweetFetcher implements Runnable {
     private int statusLimitToKeep;
 
 
-    public TweetFetcher(Twitter twitter) {
-        this.twitter = twitter;
+    public TweetFetcher(Twitter twitter, TweetFilter tweetFilter) {
         loadArguments();
-        tweetFilter = new TweetFilter(twitter);
+        this.twitter = twitter;
+        this.tweetFilter = tweetFilter;
         statusDao = new StatusDao();
         addTodaysStatusesIntoMap();
     }

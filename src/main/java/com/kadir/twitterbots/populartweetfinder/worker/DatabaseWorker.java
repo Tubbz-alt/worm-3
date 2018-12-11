@@ -2,23 +2,26 @@ package com.kadir.twitterbots.populartweetfinder.worker;
 
 import com.kadir.twitterbots.populartweetfinder.dao.StatusDao;
 import com.kadir.twitterbots.populartweetfinder.entity.CustomStatus;
+import com.kadir.twitterbots.populartweetfinder.scheduler.ScheduledRunnable;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * @author akadir
  * Date: 10/12/2018
  * Time: 20:17
  */
-public class DatabaseWorker implements Runnable {
+public class DatabaseWorker implements ScheduledRunnable {
     private final Logger logger = Logger.getLogger(this.getClass());
 
     private TweetFetcher tweetFetcher;
     private StatusDao statusDao;
+    private volatile ScheduledFuture<?> scheduledFuture;
 
     public DatabaseWorker(TweetFetcher tweetFetcher) {
         this.tweetFetcher = tweetFetcher;
@@ -40,6 +43,17 @@ public class DatabaseWorker implements Runnable {
     public void run() {
         logger.info("Run database worker");
         saveStatusesToDatabase();
+    }
+
+    @Override
+    public void cancel() {
+        scheduledFuture.cancel(false);
+        logger.info("cancel scheduled task: " + this.getClass().getSimpleName());
+    }
+
+    @Override
+    public void setScheduledFuture(ScheduledFuture<?> scheduledFuture) {
+        this.scheduledFuture = scheduledFuture;
     }
 
     public void saveStatusesToDatabase() {

@@ -4,6 +4,7 @@ import com.kadir.twitterbots.populartweetfinder.dao.UserDao;
 import com.kadir.twitterbots.populartweetfinder.entity.ApiProcessType;
 import com.kadir.twitterbots.populartweetfinder.entity.IgnoredUser;
 import com.kadir.twitterbots.populartweetfinder.handler.RateLimitHandler;
+import com.kadir.twitterbots.populartweetfinder.scheduler.ScheduledRunnable;
 import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import org.apache.log4j.Logger;
@@ -18,13 +19,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * @author akadir
  * Date: 08/12/2018
  * Time: 18:57
  */
-public class UserBasedFilter implements StatusFilter, Runnable {
+public class UserBasedFilter implements StatusFilter, ScheduledRunnable {
     private final Logger logger = Logger.getLogger(this.getClass());
     private int minFollowingCount;
     private int maxFollowingCount;
@@ -32,8 +34,7 @@ public class UserBasedFilter implements StatusFilter, Runnable {
     private UserDao userDao = new UserDao();
     private Set<Long> ignoredUsersSet = new HashSet<>();
     private Twitter twitter;
-
-    private Thread userBasedFilterThread;
+    private volatile ScheduledFuture<?> scheduledFuture;
 
     public UserBasedFilter(Twitter twitter) {
         this.twitter = twitter;
@@ -60,31 +61,19 @@ public class UserBasedFilter implements StatusFilter, Runnable {
      */
     @Override
     public void run() {
-        while (true) {
-            try {
-                if (!userBasedFilterThread.isInterrupted()) {
-                    cleanUpIgnoredUsers();
-                    logger.info("Ignored users cleaned up.");
-                    loadIgnoredUsers();
-                    logger.info("Sleep 1 hour.");
-                    Thread.sleep(1000L * 60 * 60);
-                } else {
-                    break;
-                }
-            } catch (InterruptedException e) {
-                logger.error(e);
-                Thread.currentThread().interrupt();
-            }
-        }
+        logger.info("run scheduled task: " + this.getClass().getSimpleName());
+        cleanUpIgnoredUsers();
+        loadIgnoredUsers();
     }
 
-    public void start() {
-        logger.info("Starting user based filter thread");
-        if (userBasedFilterThread == null) {
-            userBasedFilterThread = new Thread(this, this.getClass().getSimpleName());
-            userBasedFilterThread.start();
-            logger.info("user based filter thread started");
-        }
+    public void cancel() {
+        scheduledFuture.cancel(true);
+        logger.info("cancel scheduled task: " + this.getClass().getSimpleName());
+    }
+
+    @Override
+    public void setScheduledFuture(ScheduledFuture<?> scheduledFuture) {
+        this.scheduledFuture = scheduledFuture;
     }
 
     @Override
@@ -101,7 +90,7 @@ public class UserBasedFilter implements StatusFilter, Runnable {
             if (!ignoredUsersSet.contains(user.getId())) {
                 userDao.insertIgnoredUser(user);
                 ignoredUsersSet.add(user.getId());
-                logger.info("Add into ignored users as it seems like parody account: " + user.getScreenName());
+                logger.info("add into ignored users as it seems like parody account: " + user.getScreenName());
             }
             wouldBe = true;
         }
@@ -116,7 +105,7 @@ public class UserBasedFilter implements StatusFilter, Runnable {
 
     public void loadIgnoredUsers() {
         ignoredUsersSet = userDao.getIgnoredUserIds();
-        logger.info("Ignored users loaded from database. Size: " + ignoredUsersSet.size());
+        logger.info("load ignored users from database. size: " + ignoredUsersSet.size());
     }
 
     private void cleanUpIgnoredUsers() {
@@ -143,7 +132,7 @@ public class UserBasedFilter implements StatusFilter, Runnable {
                 Thread.currentThread().interrupt();
             }
         }
-
+        logger.info("finish clean up ignored users task");
     }
 
     private void deleteOrUpdateIgnoredUser(IgnoredUser ignoredUser, boolean userExist, boolean isVerified) {

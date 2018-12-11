@@ -26,7 +26,7 @@ public class ContentFilterDao {
         ResultSet resultSet = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("SELECT word FROM IgnoredWords WHERE type = ?");
+            preparedStatement = conn.prepareStatement("SELECT word FROM IgnoredKeyWords WHERE type = ?");
             preparedStatement.setInt(1, IgnoredWordType.WORD.getType());
             resultSet = preparedStatement.executeQuery();
             preparedStatement.setString(1, DataUtil.getYesterday());
@@ -49,7 +49,7 @@ public class ContentFilterDao {
         ResultSet resultSet = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("SELECT word FROM IgnoredWords WHERE type = ?");
+            preparedStatement = conn.prepareStatement("SELECT word FROM IgnoredKeyWords WHERE type = ?");
             preparedStatement.setInt(1, IgnoredWordType.USERNAME.getType());
             resultSet = preparedStatement.executeQuery();
             preparedStatement.setString(1, DataUtil.getYesterday());

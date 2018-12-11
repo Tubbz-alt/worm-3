@@ -4,6 +4,7 @@ import com.google.common.base.Optional;
 import com.kadir.twitterbots.populartweetfinder.dao.ContentFilterDao;
 import com.kadir.twitterbots.populartweetfinder.exceptions.IllegalLanguageKeyException;
 import com.kadir.twitterbots.populartweetfinder.exceptions.LanguageIdentifierInitialisingException;
+import com.kadir.twitterbots.populartweetfinder.scheduler.ScheduledRunnable;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
@@ -24,13 +25,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * @author akadir
  * Date: 08/12/2018
  * Time: 20:29
  */
-public class ContentBasedFilter implements StatusFilter {
+public class ContentBasedFilter implements StatusFilter, ScheduledRunnable {
     private final Logger logger = Logger.getLogger(this.getClass());
 
     private String languageKey;
@@ -39,6 +41,7 @@ public class ContentBasedFilter implements StatusFilter {
     private ContentFilterDao contentFilterDao;
     private Set<String> ignoredWords;
     private Set<String> ignoredUsernames;
+    private volatile ScheduledFuture<?> scheduledFuture;
 
     public ContentBasedFilter() {
         init();
@@ -52,9 +55,36 @@ public class ContentBasedFilter implements StatusFilter {
         logger.info("Set languageKey:" + languageKey);
         initializeLanguageIdentifiers();
         contentFilterDao = new ContentFilterDao();
-        ignoredWords = contentFilterDao.getIgnoredWords();
-        ignoredUsernames = contentFilterDao.getIgnoredUsernames();
+        loadIgnoredKeyWords();
     }
+
+    /**
+     * When an object implementing interface <code>Runnable</code> is used
+     * to create a thread, starting the thread causes the object's
+     * <code>run</code> method to be called in that separately executing
+     * thread.
+     * <p>
+     * The general contract of the method <code>run</code> is that it may
+     * take any action whatsoever.
+     *
+     * @see Thread#run()
+     */
+    @Override
+    public void run() {
+        logger.info("run scheduled task: " + this.getClass().getSimpleName());
+        loadIgnoredKeyWords();
+    }
+
+    public void cancel() {
+        scheduledFuture.cancel(true);
+        logger.info("cancel scheduled task: " + this.getClass().getSimpleName());
+    }
+
+    @Override
+    public void setScheduledFuture(ScheduledFuture<?> scheduledFuture) {
+        this.scheduledFuture = scheduledFuture;
+    }
+
 
     @Override
     public boolean passed(Status status) {
@@ -112,6 +142,12 @@ public class ContentBasedFilter implements StatusFilter {
             isCorrect = lang.get().getLanguage().equalsIgnoreCase(languageKey);
         }
         return isCorrect;
+    }
+
+    private void loadIgnoredKeyWords() {
+        ignoredWords = contentFilterDao.getIgnoredWords();
+        ignoredUsernames = contentFilterDao.getIgnoredUsernames();
+        logger.info("load ignored keywords from database. words: " + ignoredWords.size() + " - usernames: " + ignoredUsernames.size());
     }
 
     private void initializeLanguageIdentifiers() {
