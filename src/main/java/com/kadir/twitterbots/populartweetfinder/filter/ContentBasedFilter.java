@@ -68,7 +68,7 @@ public class ContentBasedFilter extends BaseScheduledRunnable implements StatusF
     @Override
     public void schedule() {
         executorService.scheduleWithFixedDelay(this, DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS, DEFAULT_DELAY_FOR_SCHEDULED_TASKS, TimeUnit.MINUTES);
-        logger.info("add scheduler to run with fixed delay. initial delay: " + DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS + " delay:" + DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
+        logger.info("add scheduler to run with fixed delay. initial delay:" + DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS + " delay:" + DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
         TaskScheduler.addScheduledTask(this);
     }
 

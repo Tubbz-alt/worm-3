@@ -54,6 +54,7 @@ public class BotAuthenticator {
 
     private static void validateTokens(String consumerKey, String consumerSecret, String accessToken, String accessTokenSecret) throws TwitterException, IOException {
         if (DataUtil.isNullOrEmpty(consumerKey) || DataUtil.isNullOrEmpty(consumerSecret)) {
+            logger.error("consumerKey or consumerSecret cannot be null or empty.");
             throw new IllegalApiTokenException("consumerKey or consumerSecret cannot be null or empty.");
         } else if (DataUtil.isNullOrEmpty(accessToken) || DataUtil.isNullOrEmpty(accessTokenSecret)) {
             getAccessTokenAndSecretFromTwitter(consumerKey, consumerSecret, accessToken, accessTokenSecret);

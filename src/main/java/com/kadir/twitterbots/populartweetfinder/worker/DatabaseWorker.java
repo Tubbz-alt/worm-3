@@ -39,7 +39,7 @@ public class DatabaseWorker extends BaseScheduledRunnable {
     @Override
     public void schedule() {
         scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, delay, TimeUnit.MINUTES);
-        logger.info("add scheduler to run with fixed delay. initial delay: " + initialDelay + " delay: " + delay);
+        logger.info("add scheduler to run with fixed delay. initial delay:" + initialDelay + " delay:" + delay);
         TaskScheduler.addScheduledTask(this);
     }
 
