@@ -32,8 +32,8 @@ public class TaskScheduler {
             ScheduledRunnable task = iterator.next();
             if (task.getPriority().getLevel() < basePriority.getLevel()) {
                 task.cancel();
+                logger.info("cancel and remove scheduled task from list: " + task.getClass().getSimpleName());
                 iterator.remove();
-                logger.info("cancel and remove scheduled task from list: " + scheduledRunnable.getClass().getSimpleName());
             }
         }
     }
