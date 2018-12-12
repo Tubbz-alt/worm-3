@@ -8,6 +8,8 @@ import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,28 +76,42 @@ public class DatabaseWorker extends BaseScheduledRunnable {
             for (CustomStatus customStatus : fetchedStatuses) {
                 Long id = statusDao.saveStatus(customStatus);
                 customStatus.setId(id);
-                logger.debug("Save status into database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                logger.info("Save status into database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
             }
         } else {
-            Set<Long> fetchedStatusIdSet = fetchedStatusMap.keySet();
-            for (CustomStatus customStatus : fetchedStatuses) {
-                if (customStatus.getId() == null) {
-                    Long id = statusDao.saveStatus(customStatus);
-                    customStatus.setId(id);
-                    logger.debug("Status saved into database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
-                } else {
-                    statusDao.updateTodaysStatusScore(customStatus.getStatusId(), customStatus.getScore());
-                    logger.debug("Update status score in database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
-                }
-            }
+            HashMap<Long, CustomStatus> savedStatusMap = generateMap(savedStatuses);
+            Set<Long> mergedStatusIdSet = new HashSet<>();
+            mergedStatusIdSet.addAll(savedStatusMap.keySet());
+            mergedStatusIdSet.addAll(fetchedStatusMap.keySet());
 
-            for (CustomStatus customStatus : savedStatuses) {
-                if (!fetchedStatusIdSet.contains(customStatus.getStatusId())) {
-                    statusDao.removeStatus(customStatus);
-                    logger.debug("Status removed from database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+            for (Long statusId : mergedStatusIdSet) {
+                if (fetchedStatusMap.containsKey(statusId) && savedStatusMap.containsKey(statusId)) {
+                    CustomStatus statusToUpdate = savedStatusMap.get(statusId);
+                    int newScore = fetchedStatusMap.get(statusId).getScore();
+                    statusDao.updateTodaysStatusScore(statusToUpdate.getStatusId(), newScore);
+                    logger.debug("Update status score in database. " + statusToUpdate.getId() + " - " + newScore + " - " + statusToUpdate.getStatusLink());
+                } else if (fetchedStatusMap.containsKey(statusId)) {
+                    CustomStatus statusToInsert = fetchedStatusMap.get(statusId);
+                    Long id = statusDao.saveStatus(statusToInsert);
+                    statusToInsert.setId(id);
+                    logger.info("Status saved into database. " + statusToInsert.getId() + " - " + statusToInsert.getScore() + " - " + statusToInsert.getStatusLink());
+                } else if (savedStatusMap.containsKey(statusId)) {
+                    CustomStatus statusToRemove = savedStatusMap.get(statusId);
+                    statusDao.removeStatus(statusToRemove);
+                    logger.info("Status removed from database. " + statusToRemove.getId() + " - " + statusToRemove.getScore() + " - " + statusToRemove.getStatusLink());
                 }
             }
         }
         logger.info("refresh database statuses");
+    }
+
+    private HashMap<Long, CustomStatus> generateMap(List<CustomStatus> customStatusList) {
+        HashMap<Long, CustomStatus> customStatusMap = new HashMap<>();
+
+        for (CustomStatus customStatus : customStatusList) {
+            customStatusMap.put(customStatus.getStatusId(), customStatus);
+        }
+
+        return customStatusMap;
     }
 }
