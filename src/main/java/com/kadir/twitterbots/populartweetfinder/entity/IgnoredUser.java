@@ -66,7 +66,8 @@ public class IgnoredUser {
         return lastCheck;
     }
 
-    public void setLastCheck(String lastCheck) {
-        this.lastCheck = lastCheck;
+    public void setLastCheck(Date lastCheck) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
+        this.lastCheck = simpleDateFormat.format(lastCheck);
     }
 }

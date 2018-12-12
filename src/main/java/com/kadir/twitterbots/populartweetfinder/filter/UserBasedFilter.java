@@ -185,12 +185,14 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
                 userDao.deleteIgnoredUser(ignoredUser);
                 logger.info("Ignored user is deleted due to verification. " + ignoredUser.getUserId() + " - " + ignoredUser.getScreenName());
             } else if (!DataUtil.isNullOrEmpty(ignoredUser.getPassiveSince())) {
+                ignoredUser.setLastCheck(new Date());
                 userDao.setUserActive(ignoredUser);
                 logger.info("Ignored user updated to active. " + ignoredUser.getUserId() + " - " + ignoredUser.getScreenName());
             }
         } else {
             if (DataUtil.isNullOrEmpty(ignoredUser.getPassiveSince())) {
                 ignoredUser.setPassiveSince(new Date());
+                ignoredUser.setLastCheck(new Date());
                 userDao.updateIgnoredUserToPassive(ignoredUser);
                 logger.info("User not found and updated to passive. userId: " + ignoredUser.getUserId() + " screen name: " + ignoredUser.getScreenName());
             }

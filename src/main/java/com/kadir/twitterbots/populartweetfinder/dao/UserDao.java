@@ -144,10 +144,11 @@ public class UserDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("UPDATE IgnoredUsers SET passiveSince = ? WHERE userId = ?");
+            preparedStatement = conn.prepareStatement("UPDATE IgnoredUsers SET passiveSince = ?, lastCheck = ? WHERE userId = ?");
 
             preparedStatement.setString(1, ignoredUser.getPassiveSince());
-            preparedStatement.setLong(2, ignoredUser.getUserId());
+            preparedStatement.setString(2, ignoredUser.getLastCheck());
+            preparedStatement.setLong(3, ignoredUser.getUserId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -161,9 +162,10 @@ public class UserDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("UPDATE IgnoredUsers SET passiveSince = '' WHERE userId = ?");
+            preparedStatement = conn.prepareStatement("UPDATE IgnoredUsers SET passiveSince = '', lastCheck = ? WHERE userId = ?");
 
-            preparedStatement.setLong(1, ignoredUser.getUserId());
+            preparedStatement.setString(1, ignoredUser.getLastCheck());
+            preparedStatement.setLong(2, ignoredUser.getUserId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
