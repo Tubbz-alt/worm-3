@@ -26,6 +26,8 @@ public class DatabaseWorker extends BaseScheduledRunnable {
 
     private TweetFetcher tweetFetcher;
     private StatusDao statusDao;
+    private final int initialDelay = 10;
+    private final int delay = 30;
 
     public DatabaseWorker(TweetFetcher tweetFetcher) {
         super(TaskPriority.HIGH);
@@ -36,7 +38,8 @@ public class DatabaseWorker extends BaseScheduledRunnable {
 
     @Override
     public void schedule() {
-        scheduledFuture = executorService.scheduleWithFixedDelay(this, 2, 30, TimeUnit.MINUTES);
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, delay, TimeUnit.MINUTES);
+        logger.info("add scheduler to run with fixed delay. initial delay: " + initialDelay + " delay: " + delay);
         TaskScheduler.addScheduledTask(this);
     }
 

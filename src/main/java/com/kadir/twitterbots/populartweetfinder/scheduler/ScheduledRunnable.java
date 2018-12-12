@@ -13,5 +13,7 @@ public interface ScheduledRunnable extends Runnable {
 
     void cancel();
 
+    void cancelNow();
+
     TaskPriority getPriority();
 }

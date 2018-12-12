@@ -52,6 +52,8 @@ public class TweetFetcher extends BaseScheduledRunnable {
     private TweetFilter tweetFilter;
     private DatabaseWorker databaseWorker;
     private StatusDao statusDao;
+    private final int initialDelay = 0;
+    private final int delay = 5;
 
     public TweetFetcher() {
         super(TaskPriority.LOW);
@@ -70,7 +72,8 @@ public class TweetFetcher extends BaseScheduledRunnable {
     }
 
     public void schedule() {
-        scheduledFuture = executorService.scheduleWithFixedDelay(this, 0, 5, TimeUnit.MINUTES);
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, delay, TimeUnit.MINUTES);
+        logger.info("add scheduler to run with fixed delay. initial delay: " + initialDelay + " delay: " + delay);
         TaskScheduler.addScheduledTask(this);
     }
 

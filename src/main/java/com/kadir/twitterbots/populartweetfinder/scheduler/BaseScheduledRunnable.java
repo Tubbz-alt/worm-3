@@ -38,6 +38,12 @@ public abstract class BaseScheduledRunnable implements ScheduledRunnable {
     }
 
     @Override
+    public void cancelNow() {
+        executorService.shutdownNow();
+        logger.info("shutdown scheduled task: " + this.getClass().getSimpleName());
+    }
+
+    @Override
     public TaskPriority getPriority() {
         return priority;
     }

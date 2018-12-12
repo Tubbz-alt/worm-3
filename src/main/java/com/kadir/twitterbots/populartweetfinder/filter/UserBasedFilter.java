@@ -26,6 +26,9 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants.DEFAULT_DELAY_FOR_SCHEDULED_TASKS;
+import static com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants.DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS;
+
 /**
  * @author akadir
  * Date: 08/12/2018
@@ -58,7 +61,8 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
 
     @Override
     public void schedule() {
-        scheduledFuture = executorService.scheduleWithFixedDelay(this, ApplicationConstants.INITIAL_DELAY_FOR_SCHEDULED_TASKS, ApplicationConstants.DELAY_FOR_SCHEDULED_TASKS, TimeUnit.MINUTES);
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS, DEFAULT_DELAY_FOR_SCHEDULED_TASKS, TimeUnit.MINUTES);
+        logger.info("add scheduler to run with fixed delay. initial delay: " + DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS + " delay:" + DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
         TaskScheduler.addScheduledTask(this);
     }
 

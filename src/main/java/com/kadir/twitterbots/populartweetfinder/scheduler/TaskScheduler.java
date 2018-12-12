@@ -22,7 +22,7 @@ public class TaskScheduler {
 
     public static void addScheduledTask(ScheduledRunnable scheduledRunnable) {
         scheduledTasks.add(scheduledRunnable);
-        logger.info("add scheduled task into list: " + scheduledRunnable.getClass().getSimpleName());
+        logger.debug("add scheduled task into list: " + scheduledRunnable.getClass().getSimpleName());
     }
 
     public static void shutdownLowerPriorityTasks(ScheduledRunnable scheduledRunnable) {
@@ -41,7 +41,7 @@ public class TaskScheduler {
         Iterator<ScheduledRunnable> iterator = scheduledTasks.iterator();
         while (iterator.hasNext()) {
             ScheduledRunnable task = iterator.next();
-            task.cancel();
+            task.cancelNow();
             iterator.remove();
         }
     }

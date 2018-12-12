@@ -7,7 +7,6 @@ import com.kadir.twitterbots.populartweetfinder.exceptions.IllegalLanguageKeyExc
 import com.kadir.twitterbots.populartweetfinder.exceptions.LanguageIdentifierInitialisingException;
 import com.kadir.twitterbots.populartweetfinder.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
-import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
@@ -30,6 +29,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import static com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants.DEFAULT_DELAY_FOR_SCHEDULED_TASKS;
+import static com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants.DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS;
 
 /**
  * @author akadir
@@ -65,7 +67,8 @@ public class ContentBasedFilter extends BaseScheduledRunnable implements StatusF
 
     @Override
     public void schedule() {
-        executorService.scheduleWithFixedDelay(this, ApplicationConstants.INITIAL_DELAY_FOR_SCHEDULED_TASKS, ApplicationConstants.DELAY_FOR_SCHEDULED_TASKS, TimeUnit.MINUTES);
+        executorService.scheduleWithFixedDelay(this, DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS, DEFAULT_DELAY_FOR_SCHEDULED_TASKS, TimeUnit.MINUTES);
+        logger.info("add scheduler to run with fixed delay. initial delay: " + DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS + " delay:" + DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
         TaskScheduler.addScheduledTask(this);
     }
 
