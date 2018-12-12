@@ -10,6 +10,7 @@ import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
 import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import org.apache.log4j.Logger;
+import twitter4j.IDs;
 import twitter4j.Status;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
@@ -78,6 +79,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
         logger.info("run scheduled task: " + this.getClass().getSimpleName());
         cleanUpIgnoredUsers();
         loadIgnoredUsers();
+        addBlockedUsersIntoIgnoredUsers();
         logger.info("finish scheduled task: " + this.getClass().getSimpleName());
     }
 
@@ -117,6 +119,35 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
     public void loadIgnoredUsers() {
         ignoredUsersSet = userDao.getIgnoredUserIds();
         logger.info("load ignored users from database. size: " + ignoredUsersSet.size());
+    }
+
+    private void addBlockedUsersIntoIgnoredUsers() {
+        try {
+            IDs blockedIds = twitter.getBlocksIDs();
+            RateLimitHandler.handle(twitter.getId(), blockedIds.getRateLimitStatus(), ApiProcessType.GET_BLOCKS_IDS);
+            long[] blockedIdsArr = blockedIds.getIDs();
+
+            for (long userId : blockedIdsArr) {
+                if (!ignoredUsersSet.contains(userId)) {
+                    try {
+                        User user = twitter.showUser(userId);
+                        RateLimitHandler.handle(twitter.getId(), user.getRateLimitStatus(), ApiProcessType.SHOW_USER);
+                        if (!user.isVerified()) {
+                            userDao.insertIgnoredUser(user);
+                            ignoredUsersSet.add(userId);
+                            logger.info("add user into ignored users: " + user.getId() + " - " + user.getScreenName());
+                        }
+                    } catch (TwitterException e) {
+                        logger.error(e.getErrorMessage());
+                    }
+                }
+            }
+        } catch (TwitterException e) {
+            logger.error(e.getErrorMessage());
+        } catch (InterruptedException e) {
+            logger.error(e);
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void cleanUpIgnoredUsers() {
