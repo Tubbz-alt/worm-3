@@ -47,7 +47,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
     public void schedule() {
         Long quoteTime = LocalDateTime.now().until(LocalDate.now().atTime(quoteHour, quoteMinute, 0), ChronoUnit.SECONDS);
         scheduledFuture = executorService.scheduleAtFixedRate(this, quoteTime, 1440, TimeUnit.SECONDS);
-        logger.info("schedule " + this.getClass().getSimpleName() + " to run at " + quoteHour + ":" + quoteMinute);
+        logger.info("schedule " + this.getClass().getSimpleName() + " to run at " + quoteHour + ":" + String.format("%02d", quoteMinute));
         TaskScheduler.addScheduledTask(this);
     }
 
@@ -66,6 +66,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
     }
 
     private List<CustomStatus> loadPopularTweetsFromDatabase() {
+        logger.info("check statuses if any of them deleted");
         List<CustomStatus> savedStatuses = statusDao.getTodaysStatuses();
 
         Iterator<CustomStatus> iterator = savedStatuses.iterator();
@@ -79,7 +80,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
 
         savedStatuses.sort(Comparator.comparing(CustomStatus::getScore).reversed());
 
-        logger.info("loaded popular status' from database to quote.");
+        logger.info("check and load popular status' from database to quote.");
         return savedStatuses;
     }
 
