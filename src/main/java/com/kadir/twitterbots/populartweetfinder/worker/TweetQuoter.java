@@ -138,7 +138,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
                 logger.error(e.getMessage());
                 retryCount++;
                 if (retryCount > QUOTE_RETRY_COUNT) {
-                    logger.error("retry count: " + retryCount + ". Program finished.");
+                    logger.error("retry count limit exceeded. program finished.");
                     return;
                 }
                 logger.info("wait 1 minute before retry. retry count: " + retryCount);
