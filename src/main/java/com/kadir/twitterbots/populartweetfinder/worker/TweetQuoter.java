@@ -36,6 +36,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
     private int quoteLimit;
     private int quoteHour;
     private int quoteMinute;
+    private final int QUOTE_RETRY_COUNT = 5;
 
     public TweetQuoter() {
         super(TaskPriority.VERY_HIGH);
@@ -46,6 +47,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
     public void schedule() {
         Long quoteTime = LocalDateTime.now().until(LocalDate.now().atTime(quoteHour, quoteMinute, 0), ChronoUnit.SECONDS);
         scheduledFuture = executorService.scheduleAtFixedRate(this, quoteTime, 1440, TimeUnit.SECONDS);
+        logger.info("schedule " + this.getClass().getSimpleName() + " to run at " + quoteHour + ":" + quoteMinute);
         TaskScheduler.addScheduledTask(this);
     }
 
@@ -64,14 +66,12 @@ public class TweetQuoter extends BaseScheduledRunnable {
 
     private List<CustomStatus> loadPopularTweetsFromDatabase() {
         List<CustomStatus> savedStatuses = statusDao.getTodaysStatuses();
-        TweetFilter tweetFilter = new TweetFilter();
-        tweetFilter.initForQuote(twitter);
 
         Iterator<CustomStatus> iterator = savedStatuses.iterator();
         while (iterator.hasNext()) {
             CustomStatus customStatus = iterator.next();
             Status s = showStatus(customStatus.getStatusId());
-            if (s == null || !tweetFilter.canStatusBeUsed(s)) {
+            if (s == null) {
                 iterator.remove();
             }
         }
@@ -116,6 +116,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
 
         long lastPostedStatusId = -1;
 
+        int retryCount = 0;
         for (int i = mostPopularTweets.size() - 1; i >= 0; i--) {
             try {
                 CustomStatus s = mostPopularTweets.get(i);
@@ -132,9 +133,15 @@ public class TweetQuoter extends BaseScheduledRunnable {
                     RateLimitHandler.handle(twitter.getId(), updatedStatus.getRateLimitStatus(), ApiProcessType.UPDATE_STATUS);
                     Thread.sleep(50 * 1000L);
                 }
+                retryCount = 0;
             } catch (TwitterException e) {
                 logger.error(e.getMessage());
-                logger.info("wait 1 minute before retry");
+                retryCount++;
+                if (retryCount > QUOTE_RETRY_COUNT) {
+                    logger.error("retry count: " + retryCount + ". Program finished.");
+                    return;
+                }
+                logger.info("wait 1 minute before retry. retry count: " + retryCount);
                 try {
                     Thread.sleep(60 * 1000L);
                 } catch (InterruptedException e1) {
