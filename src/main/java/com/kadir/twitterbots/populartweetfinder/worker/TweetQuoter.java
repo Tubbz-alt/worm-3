@@ -59,6 +59,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
             authenticate();
             List<CustomStatus> popularStatuses = loadPopularTweetsFromDatabase();
             quoteTweets(popularStatuses);
+            TaskScheduler.shutdownAllTasks();
         } catch (TwitterException e) {
             logger.error(e);
         }
