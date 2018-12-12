@@ -6,7 +6,7 @@ package com.kadir.twitterbots.populartweetfinder.entity;
  * Time: 23:23
  */
 public enum ApiProcessType {
-    SEARCH("search"), SHOW_STATUS("showStatus"), SHOW_USER("showUser"), UPDATE_STATUS("updateStatus");
+    SEARCH("search"), SHOW_STATUS("showStatus"), SHOW_USER("showUser"), UPDATE_STATUS("updateStatus"), GET_BLOCKS_IDS("getBlocksIDs");
 
     private String name;
 
