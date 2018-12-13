@@ -42,6 +42,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
     private int maxFollowersCount;
     private UserDao userDao = new UserDao();
     private Set<Long> ignoredUsersSet = new HashSet<>();
+    private Set<Long> yesterdayQuotedUsersSet = new HashSet<>();
     private boolean isCancelled = false;
     private Twitter twitter;
 
@@ -56,6 +57,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
         logger.debug("Set maxFollowingCount:" + maxFollowingCount);
         this.maxFollowersCount = Integer.parseInt(System.getProperty("maxFollowersCount", "200000"));
         logger.debug("Set maxFollowersCount:" + maxFollowersCount);
+        loadYesterdayQuotedUsers();
         loadIgnoredUsers();
     }
 
@@ -97,7 +99,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
     public boolean passed(Status status) {
         User user = status.getUser();
 
-        return (!user.isVerified() && isUserFollowingAndFollowerNumbersInRange(user) && !wouldUserBeParodyAccount(user));
+        return (!user.isVerified() && isUserFollowingAndFollowerNumbersInRange(user) && !wouldUserBeParodyAccount(user) && !isUserQuotedYesterday(status.getUser()));
     }
 
     private boolean wouldUserBeParodyAccount(User user) {
@@ -114,10 +116,19 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
         return wouldBe;
     }
 
+    private boolean isUserQuotedYesterday(User user) {
+        return yesterdayQuotedUsersSet.contains(user.getId());
+    }
+
     private boolean isUserFollowingAndFollowerNumbersInRange(User user) {
         int friendsCount = user.getFriendsCount();
         int followersCount = user.getFollowersCount();
         return (friendsCount > minFollowingCount && friendsCount < maxFollowingCount && maxFollowersCount > followersCount);
+    }
+
+    private void loadYesterdayQuotedUsers() {
+        yesterdayQuotedUsersSet = userDao.getYesterdaysQuotedUsers();
+        logger.debug("Yesterday's quoted users loaded from database. Size: " + yesterdayQuotedUsersSet.size());
     }
 
     public void loadIgnoredUsers() {
@@ -159,6 +170,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
         Iterator<IgnoredUser> iterator = ignoredUsers.iterator();
         while (iterator.hasNext() && !isCancelled) {
             IgnoredUser ignoredUser = iterator.next();
+            ignoredUser.setLastCheck(new Date());
             try {
                 if (wouldBeRemoved(ignoredUser)) {
                     userDao.deleteIgnoredUser(ignoredUser);
@@ -189,14 +201,12 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
                 userDao.deleteIgnoredUser(ignoredUser);
                 logger.info("Ignored user is deleted due to verification. " + ignoredUser.getUserId() + " - " + ignoredUser.getScreenName());
             } else if (!DataUtil.isNullOrEmpty(ignoredUser.getPassiveSince())) {
-                ignoredUser.setLastCheck(new Date());
                 userDao.setUserActive(ignoredUser);
                 logger.info("Ignored user updated to active. " + ignoredUser.getUserId() + " - " + ignoredUser.getScreenName());
             }
         } else {
             if (DataUtil.isNullOrEmpty(ignoredUser.getPassiveSince())) {
                 ignoredUser.setPassiveSince(new Date());
-                ignoredUser.setLastCheck(new Date());
                 userDao.updateIgnoredUserToPassive(ignoredUser);
                 logger.info("User not found and updated to passive. userId: " + ignoredUser.getUserId() + " screen name: " + ignoredUser.getScreenName());
             }
