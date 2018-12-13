@@ -176,6 +176,24 @@ public class UserDao {
 
     }
 
+    public void setLastCheck(IgnoredUser ignoredUser) {
+        PreparedStatement preparedStatement = null;
+        try {
+            Connection conn = DatabaseConnector.getConnection();
+            preparedStatement = conn.prepareStatement("UPDATE IgnoredUsers SET lastCheck = ? WHERE userId = ?");
+
+            preparedStatement.setString(1, ignoredUser.getLastCheck());
+            preparedStatement.setLong(2, ignoredUser.getUserId());
+
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
+        } finally {
+            closeStatement(preparedStatement);
+        }
+
+    }
+
     public void deleteIgnoredUser(IgnoredUser ignoredUser) {
         PreparedStatement preparedStatement = null;
         try {

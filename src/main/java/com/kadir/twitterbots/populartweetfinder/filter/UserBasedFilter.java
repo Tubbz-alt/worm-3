@@ -203,13 +203,15 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
             } else if (!DataUtil.isNullOrEmpty(ignoredUser.getPassiveSince())) {
                 userDao.setUserActive(ignoredUser);
                 logger.info("Ignored user updated to active. " + ignoredUser.getUserId() + " - " + ignoredUser.getScreenName());
+            } else {
+                userDao.setLastCheck(ignoredUser);
             }
+        } else if (DataUtil.isNullOrEmpty(ignoredUser.getPassiveSince())) {
+            ignoredUser.setPassiveSince(new Date());
+            userDao.updateIgnoredUserToPassive(ignoredUser);
+            logger.info("User not found and updated to passive. userId: " + ignoredUser.getUserId() + " screen name: " + ignoredUser.getScreenName());
         } else {
-            if (DataUtil.isNullOrEmpty(ignoredUser.getPassiveSince())) {
-                ignoredUser.setPassiveSince(new Date());
-                userDao.updateIgnoredUserToPassive(ignoredUser);
-                logger.info("User not found and updated to passive. userId: " + ignoredUser.getUserId() + " screen name: " + ignoredUser.getScreenName());
-            }
+            userDao.setLastCheck(ignoredUser);
         }
     }
 
