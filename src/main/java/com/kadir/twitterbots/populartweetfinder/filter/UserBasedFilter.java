@@ -222,8 +222,8 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
             LocalDate now = LocalDate.now();
             LocalDate passiveSince = LocalDate.parse(ignoredUser.getPassiveSince(), dateFormatter);
 
-            Period period = Period.between(now, passiveSince);
-            diff = period.getDays();
+            Period period = Period.between(passiveSince, now);
+            diff = period.getYears() * 365 + period.getMonths() * 30 + period.getDays();
         }
 
         return diff > ApplicationConstants.MAX_PASSIVE_PERIOD;
