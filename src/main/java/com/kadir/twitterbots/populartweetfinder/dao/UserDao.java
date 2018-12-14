@@ -98,12 +98,14 @@ public class UserDao {
 
     public Set<Long> getIgnoredUserIds() {
         Set<Long> ignoredUsersIds = new HashSet<>();
-        Statement statement = null;
+        PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
         try {
-            Connection conn = DatabaseConnector.getConnection();
-            statement = conn.createStatement();
-            resultSet = statement.executeQuery("SELECT userId FROM IgnoredUsers WHERE passiveSince=''");
+            Connection connection = DatabaseConnector.getConnection();
+            preparedStatement = connection.prepareStatement("SELECT userId FROM IgnoredUsers WHERE passiveSince='' or (passiveSince != '' and lastCheck=?)");
+            preparedStatement.setString(1, sqlDateFormat.format(new Date()));
+
+            resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
                 ignoredUsersIds.add(resultSet.getLong(1));
@@ -112,7 +114,7 @@ public class UserDao {
             logger.error(e);
         } finally {
             closeResultSet(resultSet);
-            closeStatement(statement);
+            closeStatement(preparedStatement);
         }
         return ignoredUsersIds;
     }

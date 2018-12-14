@@ -99,7 +99,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
     public boolean passed(Status status) {
         User user = status.getUser();
 
-        return (!user.isVerified() && isUserFollowingAndFollowerNumbersInRange(user) && !wouldUserBeParodyAccount(user) && !isUserQuotedYesterday(status.getUser()));
+        return (!user.isVerified() && isUserFollowingAndFollowerNumbersInRange(user) && !isUserQuotedYesterday(status.getUser()) && !ignoredUsersSet.contains(user.getId()) && !wouldUserBeParodyAccount(user));
     }
 
     private boolean wouldUserBeParodyAccount(User user) {
@@ -128,7 +128,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
 
     private void loadYesterdayQuotedUsers() {
         yesterdayQuotedUsersSet = userDao.getYesterdaysQuotedUsers();
-        logger.debug("Yesterday's quoted users loaded from database. Size: " + yesterdayQuotedUsersSet.size());
+        logger.info("load yesterday's quoted users from database. size: " + yesterdayQuotedUsersSet.size());
     }
 
     public void loadIgnoredUsers() {

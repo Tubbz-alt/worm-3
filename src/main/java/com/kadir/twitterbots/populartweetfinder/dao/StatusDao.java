@@ -311,7 +311,7 @@ public class StatusDao {
 
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("UPDATE PopularTweets SET isQuoted = ?, quotedDate = ? WHERE statusId = ?");
+            preparedStatement = connection.prepareStatement("UPDATE PopularTweets SET isQuoted = ?, quotedDate = ? WHERE id = ?");
 
             preparedStatement.setBoolean(1, true);
             preparedStatement.setString(2, sqlDateFormat.format(new Date()));
