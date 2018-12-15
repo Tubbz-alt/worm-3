@@ -87,7 +87,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
         cleanUpIgnoredUsers();
         loadIgnoredUsers();
         addBlockedUsersIntoIgnoredUsers();
-        logger.info("finish scheduled task: {}", this.getClass().getSimpleName());
+        logger.info("finish scheduled task: {} wait {} mins to next run", this.getClass().getSimpleName(), DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
     }
 
     @Override

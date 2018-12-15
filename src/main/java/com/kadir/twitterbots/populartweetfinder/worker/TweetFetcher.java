@@ -74,7 +74,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
 
     public void schedule() {
         scheduledFuture = executorService.scheduleWithFixedDelay(this, INITIAL_DELAY, DELAY, TimeUnit.MINUTES);
-        logger.info("add scheduler to run with fixed DELAY. initial delay:{} delay:{}", INITIAL_DELAY, DELAY);
+        logger.info("add scheduler to run with fixed delay. initial delay:{} delay:{}", INITIAL_DELAY, DELAY);
         TaskScheduler.addScheduledTask(this);
     }
 

@@ -88,6 +88,7 @@ public class ContentBasedFilter extends BaseScheduledRunnable implements StatusF
     public void run() {
         logger.info("run scheduled task: {}", this.getClass().getSimpleName());
         loadIgnoredKeyWords();
+        logger.info("finish scheduled task: {} wait {} mins to next run.", this.getClass().getSimpleName(), DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
     }
 
     @Override
