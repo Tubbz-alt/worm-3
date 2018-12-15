@@ -54,7 +54,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
     private DatabaseWorker databaseWorker;
     private StatusDao statusDao;
     private static final int INITIAL_DELAY = 0;
-    private static final int DELAY = 5;
+    private static final int DELAY = 1;
 
     public TweetFetcher() {
         super(TaskPriority.LOW);
