@@ -10,7 +10,7 @@
             <pattern>%-5p %d{yyyy-MM-dd HH:mm:ss} %-35c{1} %m%n</pattern>
         </encoder>
     </appender>
-    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="debug" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>log/debug-${today}.log</File>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>log/old/debug-%d{yyyy-MM-dd}.log.zip
@@ -36,10 +36,10 @@
         </encoder>
     </appender>
     <logger name="twitter4j" level="OFF"/>
-    <logger name="LanguageDetectorImpl" level="OFF"/>
+    <logger name="com.optimaize.langdetect" level="OFF"/>
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
-        <appender-ref ref="file"/>
+        <appender-ref ref="debug"/>
         <appender-ref ref="info"/>
     </root>
 </configuration>
