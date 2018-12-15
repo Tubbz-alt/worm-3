@@ -6,7 +6,7 @@ package com.kadir.twitterbots.populartweetfinder.util;
  * Time: 13:55
  */
 public class ApplicationConstants {
-    public static final String PROPERTIES_FILE_NAME = "popularTweetFinder.properties";
+    public static final String PROPERTIES_FILE_NAME = "application.properties";
     public static final String RESOURCES_FOLDER_NAME = "resources/";
     public static final int MAX_PASSIVE_PERIOD = 40;
     public static final int CHECK_DELETED_STATUSES_PERIOD = 30;
