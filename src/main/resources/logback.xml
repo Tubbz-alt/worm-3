@@ -7,7 +7,7 @@
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <Target>System.out</Target>
         <encoder>
-            <pattern>%-5p %d{yyyy-MM-dd HH:mm:ss} %-35c{1} %m%n</pattern>
+            <pattern>%-5p %d{yyyy-MM-dd HH:mm:ss} %-33c{1} %m%n</pattern>
         </encoder>
     </appender>
     <appender name="debug" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -32,7 +32,7 @@
             <totalSizeCap>50MB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-35c{1} %m%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-33c{1} %m%n</pattern>
         </encoder>
     </appender>
     <logger name="twitter4j" level="OFF"/>
