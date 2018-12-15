@@ -5,7 +5,8 @@ import com.kadir.twitterbots.populartweetfinder.entity.CustomStatus;
 import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
 import com.kadir.twitterbots.populartweetfinder.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,12 +23,12 @@ import java.util.concurrent.TimeUnit;
  * Time: 20:17
  */
 public class DatabaseWorker extends BaseScheduledRunnable {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private TweetFetcher tweetFetcher;
     private StatusDao statusDao;
-    private final int initialDelay = 10;
-    private final int delay = 30;
+    private static final int INITIAL_DELAY = 10;
+    private static final int DELAY = 30;
 
     public DatabaseWorker(TweetFetcher tweetFetcher) {
         super(TaskPriority.HIGH);
@@ -38,8 +39,8 @@ public class DatabaseWorker extends BaseScheduledRunnable {
 
     @Override
     public void schedule() {
-        scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, delay, TimeUnit.MINUTES);
-        logger.info("add scheduler to run with fixed delay. initial delay:" + initialDelay + " delay:" + delay);
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, INITIAL_DELAY, DELAY, TimeUnit.MINUTES);
+        logger.info("add scheduler to run with fixed DELAY. initial delay:{} delay:{}", INITIAL_DELAY, DELAY);
         TaskScheduler.addScheduledTask(this);
     }
 
@@ -66,7 +67,7 @@ public class DatabaseWorker extends BaseScheduledRunnable {
             logger.info("Run database worker");
             saveStatusesToDatabase();
         } catch (Exception e) {
-            logger.error(e);
+            logger.error("An error occured", e);
         }
     }
 
@@ -79,7 +80,7 @@ public class DatabaseWorker extends BaseScheduledRunnable {
             for (CustomStatus customStatus : fetchedStatuses) {
                 Long id = statusDao.saveStatus(customStatus);
                 customStatus.setId(id);
-                logger.info("Save status into database. " + customStatus.getId() + " - " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                logger.info("Save status into database. {} - {} - {}", customStatus.getId(), customStatus.getScore(), customStatus.getStatusLink());
             }
         } else {
             HashMap<Long, CustomStatus> savedStatusMap = generateMap(savedStatuses);
@@ -92,16 +93,16 @@ public class DatabaseWorker extends BaseScheduledRunnable {
                     CustomStatus statusToUpdate = savedStatusMap.get(statusId);
                     int newScore = fetchedStatusMap.get(statusId).getScore();
                     statusDao.updateTodaysStatusScore(statusToUpdate.getStatusId(), newScore);
-                    logger.debug("Update status score in database. " + statusToUpdate.getId() + " - " + newScore + " - " + statusToUpdate.getStatusLink());
+                    logger.debug("Update status score in database. {} - {} - {}", statusToUpdate.getId(), newScore, statusToUpdate.getStatusLink());
                 } else if (fetchedStatusMap.containsKey(statusId)) {
                     CustomStatus statusToInsert = fetchedStatusMap.get(statusId);
                     Long id = statusDao.saveStatus(statusToInsert);
                     statusToInsert.setId(id);
-                    logger.info("Status saved into database. " + statusToInsert.getId() + " - " + statusToInsert.getScore() + " - " + statusToInsert.getStatusLink());
+                    logger.info("Status saved into database. {} - {} - {}", statusToInsert.getId(), statusToInsert.getScore(), statusToInsert.getStatusLink());
                 } else if (savedStatusMap.containsKey(statusId)) {
                     CustomStatus statusToRemove = savedStatusMap.get(statusId);
                     statusDao.removeStatus(statusToRemove);
-                    logger.info("Status removed from database. " + statusToRemove.getId() + " - " + statusToRemove.getScore() + " - " + statusToRemove.getStatusLink());
+                    logger.info("Status removed from database. {} - {} - {}", statusToRemove.getId(), statusToRemove.getScore(), statusToRemove.getStatusLink());
                 }
             }
         }

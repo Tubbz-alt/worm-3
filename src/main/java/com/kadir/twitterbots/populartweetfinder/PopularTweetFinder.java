@@ -5,7 +5,8 @@ import com.kadir.twitterbots.populartweetfinder.exceptions.PropertyNotLoadedExce
 import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.worker.TweetFetcher;
 import com.kadir.twitterbots.populartweetfinder.worker.TweetQuoter;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +21,7 @@ import java.util.Properties;
  * Time: 13:27
  */
 public class PopularTweetFinder {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private TweetFetcher tweetFetcher;
     private TweetQuoter tweetQuoter;
@@ -56,10 +57,10 @@ public class PopularTweetFinder {
                 String key = (String) propertyKeys.nextElement();
                 String value = properties.getProperty(key);
                 System.setProperty(key, value);
-                logger.info("Set system argument " + key + ":" + value);
+                logger.info("Set system argument {}:{}", key, value);
             }
 
-            logger.info("All properties loaded from file: " + ApplicationConstants.PROPERTIES_FILE_NAME);
+            logger.info("All properties loaded from file: {}", ApplicationConstants.PROPERTIES_FILE_NAME);
         } catch (IOException e) {
             logger.error("error occurred while getting properties from file. " + ApplicationConstants.PROPERTIES_FILE_NAME, e);
             throw new PropertyNotLoadedException(ApplicationConstants.PROPERTIES_FILE_NAME);

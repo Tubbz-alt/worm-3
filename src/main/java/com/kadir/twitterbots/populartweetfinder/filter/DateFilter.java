@@ -1,6 +1,7 @@
 package com.kadir.twitterbots.populartweetfinder.filter;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.Status;
 
 import java.text.SimpleDateFormat;
@@ -12,11 +13,11 @@ import java.util.Date;
  * Time: 17:10
  */
 public class DateFilter implements StatusFilter {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
     public DateFilter() {
-        logger.info(this.getClass().getSimpleName() + " created");
+        logger.info("{} created", this.getClass().getSimpleName());
     }
 
     @Override

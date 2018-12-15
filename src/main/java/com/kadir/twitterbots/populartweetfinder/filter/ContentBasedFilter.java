@@ -18,7 +18,8 @@ import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObject;
 import com.optimaize.langdetect.text.TextObjectFactory;
 import com.vdurmont.emoji.EmojiParser;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.Status;
 import twitter4j.UserMentionEntity;
 import zemberek.langid.LanguageIdentifier;
@@ -39,7 +40,7 @@ import static com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants
  * Time: 20:29
  */
 public class ContentBasedFilter extends BaseScheduledRunnable implements StatusFilter {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private String languageKey;
     private LanguageIdentifier languageIdentifier;
@@ -58,7 +59,7 @@ public class ContentBasedFilter extends BaseScheduledRunnable implements StatusF
         if (DataUtil.isNullOrEmpty(languageKey)) {
             throw new IllegalLanguageKeyException(languageKey);
         }
-        logger.debug("Set languageKey:" + languageKey);
+        logger.debug("Set languageKey:{}", languageKey);
         initializeLanguageIdentifiers();
         contentFilterDao = new ContentFilterDao();
         loadIgnoredKeyWords();
@@ -68,7 +69,7 @@ public class ContentBasedFilter extends BaseScheduledRunnable implements StatusF
     @Override
     public void schedule() {
         executorService.scheduleWithFixedDelay(this, DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS, DEFAULT_DELAY_FOR_SCHEDULED_TASKS, TimeUnit.MINUTES);
-        logger.info("add scheduler to run with fixed delay. initial delay:" + DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS + " delay:" + DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
+        logger.info("add scheduler to run with fixed delay. initial delay:{} delay:{}", DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS, DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
         TaskScheduler.addScheduledTask(this);
     }
 
@@ -85,7 +86,7 @@ public class ContentBasedFilter extends BaseScheduledRunnable implements StatusF
      */
     @Override
     public void run() {
-        logger.info("run scheduled task: " + this.getClass().getSimpleName());
+        logger.info("run scheduled task: {}", this.getClass().getSimpleName());
         loadIgnoredKeyWords();
     }
 
@@ -150,7 +151,7 @@ public class ContentBasedFilter extends BaseScheduledRunnable implements StatusF
     private void loadIgnoredKeyWords() {
         ignoredWords = contentFilterDao.getIgnoredWords();
         ignoredUsernames = contentFilterDao.getIgnoredUsernames();
-        logger.info("load ignored keywords from database. words: " + ignoredWords.size() + " - usernames: " + ignoredUsernames.size());
+        logger.info("load ignored keywords from database. words: {} - usernames: {}", ignoredWords.size(), ignoredUsernames.size());
     }
 
     private void initializeLanguageIdentifiers() {

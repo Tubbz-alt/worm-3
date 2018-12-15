@@ -3,7 +3,8 @@ package com.kadir.twitterbots.populartweetfinder.authentication;
 import com.kadir.twitterbots.populartweetfinder.exceptions.IllegalApiTokenException;
 import com.kadir.twitterbots.populartweetfinder.exceptions.TwitterAuthenticationException;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
@@ -22,20 +23,20 @@ import java.io.InputStreamReader;
  * Time: 13:35
  */
 public class BotAuthenticator {
-    private static final Logger logger = Logger.getLogger(BotAuthenticator.class);
+    private static final Logger logger = LoggerFactory.getLogger(BotAuthenticator.class);
 
     private BotAuthenticator() {
     }
 
     public static Twitter authenticate(String consumerKey, String consumerSecret, String accessToken, String accessTokenSecret) {
-        Twitter twitter = null;
+        Twitter twitter;
         try {
             validateTokens(consumerKey, consumerSecret, accessToken, accessTokenSecret);
             ConfigurationBuilder cb = buildConfigurationBuilder(consumerKey, consumerSecret, accessToken, accessTokenSecret);
 
             twitter = new TwitterFactory(cb.build()).getInstance();
             User authUser = twitter.showUser(twitter.verifyCredentials().getId());
-            logger.info("Bot authenticated successfully. Account name: " + authUser.getName() + " - " + authUser.getScreenName() + " - " + authUser.getId());
+            logger.info("Bot authenticated successfully. Account name: {} - {} - {}", authUser.getName(), authUser.getScreenName(), authUser.getId());
         } catch (IOException | TwitterException e) {
             logger.error("An error occured while authenticating twitter account.", e);
             throw new TwitterAuthenticationException(e);
@@ -79,8 +80,8 @@ public class BotAuthenticator {
                 authAccessToken = twitter.getOAuthAccessToken(requestToken, pin);
                 accessToken = authAccessToken.getToken();
                 accessTokenSecret = authAccessToken.getTokenSecret();
-                logger.info("accessToken: " + accessToken);
-                logger.info("accessTokenSecret: " + accessTokenSecret);
+                logger.info("accessToken: {}", accessToken);
+                logger.info("accessTokenSecret: {}", accessTokenSecret);
             } else {
                 authAccessToken = twitter.getOAuthAccessToken();
             }

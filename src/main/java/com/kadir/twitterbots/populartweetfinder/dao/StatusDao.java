@@ -2,7 +2,8 @@ package com.kadir.twitterbots.populartweetfinder.dao;
 
 import com.kadir.twitterbots.populartweetfinder.entity.CustomStatus;
 import com.kadir.twitterbots.populartweetfinder.util.StatusUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.Status;
 
 import java.sql.Connection;
@@ -22,7 +23,7 @@ import java.util.List;
  * Time: 13:30
  */
 public class StatusDao {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private SimpleDateFormat sqlDateFormat = new SimpleDateFormat("yyyyMMdd");
 
     public void saveAll(List<CustomStatus> fetchedStatuses) {
@@ -61,7 +62,7 @@ public class StatusDao {
                 }
             }
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeStatement(preparedStatement);
         }
@@ -108,7 +109,7 @@ public class StatusDao {
             preparedStatement.setString(9, status.getText());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeStatement(preparedStatement);
         }
@@ -185,14 +186,14 @@ public class StatusDao {
 
                 preparedStatement.executeUpdate();
 
-                logger.info("Status was deleted. " + customStatus.getStatusInformation());
+                logger.info("Status was deleted. {}", customStatus.getStatusInformation());
             } catch (SQLException e) {
                 logger.error(e.getMessage());
             } finally {
                 closeStatement(preparedStatement);
             }
         } else {
-            logger.info("Status not found for today with status id: " + statusId);
+            logger.info("Status not found for today with status id: {}", statusId);
         }
 
     }
@@ -214,7 +215,7 @@ public class StatusDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeStatement(preparedStatement);
         }
@@ -244,7 +245,7 @@ public class StatusDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeStatement(preparedStatement);
         }
@@ -271,7 +272,7 @@ public class StatusDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeStatement(preparedStatement);
         }
@@ -298,7 +299,7 @@ public class StatusDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeStatement(preparedStatement);
         }
@@ -341,7 +342,7 @@ public class StatusDao {
                 count = resultSet.getInt(1);
             }
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeStatement(preparedStatement);
         }

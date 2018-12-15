@@ -2,7 +2,8 @@ package com.kadir.twitterbots.populartweetfinder.dao;
 
 import com.kadir.twitterbots.populartweetfinder.entity.IgnoredWordType;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,7 +19,7 @@ import java.util.Set;
  * Time: 00:24
  */
 public class ContentFilterDao {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public Set<String> getIgnoredWords() {
         Set<String> ignoredWords = new HashSet<>();
@@ -35,7 +36,7 @@ public class ContentFilterDao {
                 ignoredWords.add(resultSet.getString(1).toLowerCase());
             }
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeResultSet(resultSet);
             closeStatement(preparedStatement);
@@ -58,7 +59,7 @@ public class ContentFilterDao {
                 ignoredUsernames.add(resultSet.getString(1).toLowerCase());
             }
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeResultSet(resultSet);
             closeStatement(preparedStatement);

@@ -2,7 +2,8 @@ package com.kadir.twitterbots.populartweetfinder.dao;
 
 import com.kadir.twitterbots.populartweetfinder.entity.IgnoredUser;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.User;
 
 import java.sql.Connection;
@@ -22,7 +23,7 @@ import java.util.Set;
  * Time: 13:30
  */
 public class UserDao {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private SimpleDateFormat sqlDateFormat = new SimpleDateFormat("yyyyMMdd");
 
     public Long getAnotherTweetOfUserForToday(Long userId) {
@@ -72,7 +73,7 @@ public class UserDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeStatement(preparedStatement);
         }
@@ -90,7 +91,7 @@ public class UserDao {
             preparedStatement.setString(2, user.getScreenName());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeStatement(preparedStatement);
         }
@@ -111,7 +112,7 @@ public class UserDao {
                 ignoredUsersIds.add(resultSet.getLong(1));
             }
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeResultSet(resultSet);
             closeStatement(preparedStatement);
@@ -134,7 +135,7 @@ public class UserDao {
                 ignoredUsers.add(new IgnoredUser(resultSet));
             }
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         } finally {
             closeResultSet(resultSet);
             closeStatement(preparedStatement);

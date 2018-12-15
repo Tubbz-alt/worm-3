@@ -1,7 +1,8 @@
 package com.kadir.twitterbots.populartweetfinder.handler;
 
 import com.kadir.twitterbots.populartweetfinder.entity.ApiProcessType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.RateLimitStatus;
 
 import java.util.HashMap;
@@ -12,7 +13,7 @@ import java.util.HashMap;
  * Time: 15:47
  */
 public class RateLimitHandler {
-    private static final Logger logger = Logger.getLogger(RateLimitHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(RateLimitHandler.class);
 
     private static HashMap<String, RateLimitStatus> rateLimit = new HashMap<>();
 
@@ -43,7 +44,7 @@ public class RateLimitHandler {
         }
 
         if (sleep > 0) {
-            logger.debug("Sleep " + String.format("%.2f", sleep) + " seconds for the next " + processType.getName() + " process. Thread name: " + Thread.currentThread().getName());
+            logger.debug("Sleep {} seconds for the next {} process. Thread name: {}", String.format("%.2f", sleep), processType.getName(), Thread.currentThread().getName());
             Thread.sleep((long) (sleep * 1000));
         }
     }

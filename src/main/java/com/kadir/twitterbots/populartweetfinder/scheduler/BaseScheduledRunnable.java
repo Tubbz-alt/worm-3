@@ -1,7 +1,8 @@
 package com.kadir.twitterbots.populartweetfinder.scheduler;
 
 import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * Time: 23:43
  */
 public abstract class BaseScheduledRunnable implements ScheduledRunnable {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     protected TaskPriority priority;
     protected ScheduledExecutorService executorService;
@@ -31,16 +32,16 @@ public abstract class BaseScheduledRunnable implements ScheduledRunnable {
         try {
             executorService.awaitTermination(10 * 1000L, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            logger.error(e);
+            logger.error("Thread interrupted.", e);
             Thread.currentThread().interrupt();
         }
-        logger.info("shutdown scheduled task: " + this.getClass().getSimpleName());
+        logger.info("shutdown scheduled task: {}", this.getClass().getSimpleName());
     }
 
     @Override
     public void cancelNow() {
         executorService.shutdownNow();
-        logger.info("shutdown scheduled task: " + this.getClass().getSimpleName());
+        logger.info("shutdown scheduled task: {}", this.getClass().getSimpleName());
     }
 
     @Override

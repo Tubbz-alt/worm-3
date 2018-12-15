@@ -1,7 +1,8 @@
 package com.kadir.twitterbots.populartweetfinder.scheduler;
 
 import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -13,7 +14,7 @@ import java.util.List;
  * Time: 11:14
  */
 public class TaskScheduler {
-    private static final Logger logger = Logger.getLogger(TaskScheduler.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskScheduler.class);
 
     private static List<ScheduledRunnable> scheduledTasks = new ArrayList<>();
 
@@ -22,7 +23,7 @@ public class TaskScheduler {
 
     public static void addScheduledTask(ScheduledRunnable scheduledRunnable) {
         scheduledTasks.add(scheduledRunnable);
-        logger.debug("add scheduled task into list: " + scheduledRunnable.getClass().getSimpleName());
+        logger.debug("add scheduled task into list: {}", scheduledRunnable.getClass().getSimpleName());
     }
 
     public static void shutdownLowerPriorityTasks(ScheduledRunnable scheduledRunnable) {

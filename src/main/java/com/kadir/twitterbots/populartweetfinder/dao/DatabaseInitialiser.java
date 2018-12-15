@@ -1,7 +1,8 @@
 package com.kadir.twitterbots.populartweetfinder.dao;
 
 import com.kadir.twitterbots.populartweetfinder.exceptions.DatabaseInitialisationException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -13,7 +14,7 @@ import java.sql.Statement;
  * Time: 13:17
  */
 public class DatabaseInitialiser {
-    private static final Logger logger = Logger.getLogger(DatabaseInitialiser.class);
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseInitialiser.class);
 
     private DatabaseInitialiser() {
     }
@@ -24,7 +25,7 @@ public class DatabaseInitialiser {
             createTablesIfNotExist();
             logger.info("Database initialisation successful.");
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
             throw new DatabaseInitialisationException(e);
         }
     }

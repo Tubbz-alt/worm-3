@@ -9,7 +9,8 @@ import com.kadir.twitterbots.populartweetfinder.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
 import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.IDs;
 import twitter4j.Status;
 import twitter4j.Twitter;
@@ -35,7 +36,7 @@ import static com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants
  * Time: 18:57
  */
 public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilter {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private int minFollowingCount;
     private int maxFollowingCount;
@@ -50,13 +51,13 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
         super(TaskPriority.LOW);
         executorService = Executors.newScheduledThreadPool(1);
         this.twitter = twitter;
-        logger.debug(this.getClass().getSimpleName() + " created");
+        logger.debug("{} created", this.getClass().getSimpleName());
         this.minFollowingCount = Integer.parseInt(System.getProperty("minFollowingCount", "20"));
-        logger.debug("Set minFollowingCount:" + minFollowingCount);
+        logger.debug("Set minFollowingCount:{}", minFollowingCount);
         this.maxFollowingCount = Integer.parseInt(System.getProperty("maxFollowingCount", "2000"));
-        logger.debug("Set maxFollowingCount:" + maxFollowingCount);
+        logger.debug("Set maxFollowingCount:{}", maxFollowingCount);
         this.maxFollowersCount = Integer.parseInt(System.getProperty("maxFollowersCount", "200000"));
-        logger.debug("Set maxFollowersCount:" + maxFollowersCount);
+        logger.debug("Set maxFollowersCount:{}", maxFollowersCount);
         loadYesterdayQuotedUsers();
         loadIgnoredUsers();
     }
@@ -64,7 +65,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
     @Override
     public void schedule() {
         scheduledFuture = executorService.scheduleWithFixedDelay(this, DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS, DEFAULT_DELAY_FOR_SCHEDULED_TASKS, TimeUnit.MINUTES);
-        logger.info("add scheduler to run with fixed delay. initial delay:" + DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS + " delay:" + DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
+        logger.info("add scheduler to run with fixed delay. initial delay:{} delay:{}", DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS, DEFAULT_DELAY_FOR_SCHEDULED_TASKS);
         TaskScheduler.addScheduledTask(this);
     }
 
@@ -82,11 +83,11 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
      */
     @Override
     public void run() {
-        logger.info("run scheduled task: " + this.getClass().getSimpleName());
+        logger.info("run scheduled task: {}", this.getClass().getSimpleName());
         cleanUpIgnoredUsers();
         loadIgnoredUsers();
         addBlockedUsersIntoIgnoredUsers();
-        logger.info("finish scheduled task: " + this.getClass().getSimpleName());
+        logger.info("finish scheduled task: {}", this.getClass().getSimpleName());
     }
 
     @Override
@@ -109,7 +110,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
             if (!ignoredUsersSet.contains(user.getId())) {
                 userDao.insertIgnoredUser(user);
                 ignoredUsersSet.add(user.getId());
-                logger.info("add into ignored users as it seems like parody account: " + user.getScreenName());
+                logger.info("add into ignored users as it seems like parody account: {}", user.getScreenName());
             }
             wouldBe = true;
         }
@@ -128,12 +129,12 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
 
     private void loadYesterdayQuotedUsers() {
         yesterdayQuotedUsersSet = userDao.getYesterdaysQuotedUsers();
-        logger.info("load yesterday's quoted users from database. size: " + yesterdayQuotedUsersSet.size());
+        logger.info("load yesterday's quoted users from database. size: {}", yesterdayQuotedUsersSet.size());
     }
 
     public void loadIgnoredUsers() {
         ignoredUsersSet = userDao.getIgnoredUserIds();
-        logger.info("load ignored users from database. size: " + ignoredUsersSet.size());
+        logger.info("load ignored users from database. size: {}", ignoredUsersSet.size());
     }
 
     private void addBlockedUsersIntoIgnoredUsers() {
@@ -144,25 +145,30 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
 
             for (long userId : blockedIdsArr) {
                 if (!ignoredUsersSet.contains(userId)) {
-                    try {
-                        User user = twitter.showUser(userId);
-                        RateLimitHandler.handle(twitter.getId(), user.getRateLimitStatus(), ApiProcessType.SHOW_USER);
-                        if (!user.isVerified()) {
-                            userDao.insertIgnoredUser(user);
-                            ignoredUsersSet.add(userId);
-                            logger.info("add user into ignored users: " + user.getId() + " - " + user.getScreenName());
-                        }
-                    } catch (TwitterException e) {
-                        logger.error(e.getErrorMessage());
-                    }
+                    addUserIntoIgnoredUsers(userId);
                 }
             }
         } catch (TwitterException e) {
             logger.error(e.getErrorMessage());
         } catch (InterruptedException e) {
-            logger.error(e);
+            logger.error("Thread interrupted", e);
             Thread.currentThread().interrupt();
         }
+    }
+
+    private void addUserIntoIgnoredUsers(Long userId) throws InterruptedException {
+        try {
+            User user = twitter.showUser(userId);
+            RateLimitHandler.handle(twitter.getId(), user.getRateLimitStatus(), ApiProcessType.SHOW_USER);
+            if (!user.isVerified()) {
+                userDao.insertIgnoredUser(user);
+                ignoredUsersSet.add(userId);
+                logger.info("add user into ignored users: {} - {}", user.getId(), user.getScreenName());
+            }
+        } catch (TwitterException e) {
+            logger.error(e.getErrorMessage());
+        }
+
     }
 
     private void cleanUpIgnoredUsers() {
@@ -174,7 +180,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
             try {
                 if (wouldBeRemoved(ignoredUser)) {
                     userDao.deleteIgnoredUser(ignoredUser);
-                    logger.info("Ignored user is deleted due to passive period. " + ignoredUser.getUserId() + " - " + ignoredUser.getScreenName());
+                    logger.info("Ignored user is deleted due to passive period. {} - {}", ignoredUser.getUserId(), ignoredUser.getScreenName());
                 } else {
                     User user = twitter.showUser(ignoredUser.getUserId());
                     RateLimitHandler.handle(twitter.getId(), user.getRateLimitStatus(), ApiProcessType.SHOW_USER);
@@ -185,10 +191,10 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
                 if ((e.getErrorCode() == 50 || e.getErrorCode() == 63)) {
                     deleteOrUpdateIgnoredUser(ignoredUser, false, false);
                 } else {
-                    logger.error(e);
+                    logger.error("An error occured while getting user information from twitter", e);
                 }
             } catch (InterruptedException e) {
-                logger.error(e);
+                logger.error("Thread interrupted. ", e);
                 Thread.currentThread().interrupt();
             }
         }
@@ -199,17 +205,17 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
         if (userExist) {
             if (isVerified) {
                 userDao.deleteIgnoredUser(ignoredUser);
-                logger.info("Ignored user is deleted due to verification. " + ignoredUser.getUserId() + " - " + ignoredUser.getScreenName());
+                logger.info("Ignored user is deleted due to verification. {} - {}", ignoredUser.getUserId(), ignoredUser.getScreenName());
             } else if (!DataUtil.isNullOrEmpty(ignoredUser.getPassiveSince())) {
                 userDao.setUserActive(ignoredUser);
-                logger.info("Ignored user updated to active. " + ignoredUser.getUserId() + " - " + ignoredUser.getScreenName());
+                logger.info("Ignored user updated to active. {} - {}", ignoredUser.getUserId(), ignoredUser.getScreenName());
             } else {
                 userDao.setLastCheck(ignoredUser);
             }
         } else if (DataUtil.isNullOrEmpty(ignoredUser.getPassiveSince())) {
             ignoredUser.setPassiveSince(new Date());
             userDao.updateIgnoredUserToPassive(ignoredUser);
-            logger.info("User not found and updated to passive. userId: " + ignoredUser.getUserId() + " screen name: " + ignoredUser.getScreenName());
+            logger.info("User not found and updated to passive. userId: {} screen name: {}", ignoredUser.getUserId(), ignoredUser.getScreenName());
         } else {
             userDao.setLastCheck(ignoredUser);
         }

@@ -13,7 +13,8 @@ import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
 import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import com.kadir.twitterbots.populartweetfinder.util.StatusUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.Query;
 import twitter4j.QueryResult;
 import twitter4j.Status;
@@ -40,7 +41,7 @@ import java.util.stream.Collectors;
  * Time: 15:10
  */
 public class TweetFetcher extends BaseScheduledRunnable {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
     private Map<Long, CustomStatus> fetchedStatusMap = new HashMap<>();
@@ -52,8 +53,8 @@ public class TweetFetcher extends BaseScheduledRunnable {
     private TweetFilter tweetFilter;
     private DatabaseWorker databaseWorker;
     private StatusDao statusDao;
-    private final int initialDelay = 0;
-    private final int delay = 5;
+    private static final int INITIAL_DELAY = 0;
+    private static final int DELAY = 5;
 
     public TweetFetcher() {
         super(TaskPriority.LOW);
@@ -72,8 +73,8 @@ public class TweetFetcher extends BaseScheduledRunnable {
     }
 
     public void schedule() {
-        scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, delay, TimeUnit.MINUTES);
-        logger.info("add scheduler to run with fixed delay. initial delay:" + initialDelay + " delay:" + delay);
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, INITIAL_DELAY, DELAY, TimeUnit.MINUTES);
+        logger.info("add scheduler to run with fixed DELAY. initial delay:{} delay:{}", INITIAL_DELAY, DELAY);
         TaskScheduler.addScheduledTask(this);
     }
 
@@ -83,10 +84,10 @@ public class TweetFetcher extends BaseScheduledRunnable {
         } catch (TwitterException e) {
             logger.error("Error while fetching tweets.", e);
         } catch (InterruptedException e) {
-            logger.error(e);
+            logger.error("Thread interrupted", e);
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            logger.error(e);
+            logger.error("An error occured!", e);
         }
     }
 
@@ -114,7 +115,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         do {
             QueryResult result = twitter.search(query);
             statuses = result.getTweets();
-            logger.info("Fetch " + statuses.size() + " statuses. Completed in: " + result.getCompletedIn());
+            logger.info("Fetch {} statuses. Completed in: {}", statuses.size(), result.getCompletedIn());
 
             for (Status status : statuses) {
                 checkStatus(status);
@@ -148,7 +149,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         if (customStatus != null) {
             if (customStatus.getScore() != StatusUtil.calculateInteractionCount(newFetchedStatus)) {
                 customStatus.setScore(StatusUtil.calculateInteractionCount(newFetchedStatus));
-                logger.info("Update status score in map. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                logger.info("Update status score in map. {} - {}", customStatus.getScore(), customStatus.getStatusLink());
             }
         } else {
             CustomStatus alreadyMappedStatus = getAnotherStatusOfUserIfExist(newFetchedStatus);
@@ -159,7 +160,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
             } else {
                 customStatus = new CustomStatus(newFetchedStatus);
                 fetchedStatusMap.put(newFetchedStatus.getId(), new CustomStatus(newFetchedStatus));
-                logger.info("Save status into map. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                logger.info("Save status into map. {} - {}", customStatus.getScore(), customStatus.getStatusLink());
             }
         }
 
@@ -172,7 +173,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         CustomStatus newFetchedStatus = new CustomStatus(status);
         fetchedStatusMap.remove(alreadyMappedStatus.getStatusId());
         fetchedStatusMap.put(status.getId(), newFetchedStatus);
-        logger.info("Replace user status. " + newFetchedStatus.getScore() + " - " + newFetchedStatus.getStatusLink());
+        logger.info("Replace user status. {} - {}", newFetchedStatus.getScore(), newFetchedStatus.getStatusLink());
     }
 
     private CustomStatus getAnotherStatusOfUserIfExist(Status status) {
@@ -193,7 +194,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
             for (int i = statusLimitToKeep; i < customStatusList.size(); i++) {
                 CustomStatus customStatus = fetchedStatusMap.remove(customStatusList.get(i).getStatusId());
                 if (customStatus != null) {
-                    logger.info("Remove status from map: " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+                    logger.info("Remove status from map: {}", customStatus.getScore(), customStatus.getStatusLink());
                 }
             }
 
@@ -209,7 +210,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
             }
         }
         InteractionCountFilter.setMinInteractionCount(tempMinScore);
-        logger.info("Set minInteractionCount:" + InteractionCountFilter.getMinInteractionCount());
+        logger.info("Set minInteractionCount:{}", InteractionCountFilter.getMinInteractionCount());
     }
 
     private void removeDeletedStatuses(List<CustomStatus> customStatusList) throws InterruptedException {
@@ -229,7 +230,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
                         fetchedStatusMap.remove(customStatus.getStatusId());
                         iterator.remove();
                     }
-                    logger.error(e);
+                    logger.error("Error occured while getting status information from status.", e);
                 }
             }
         }
@@ -240,11 +241,11 @@ public class TweetFetcher extends BaseScheduledRunnable {
 
         for (CustomStatus customStatus : todaysStatuses) {
             fetchedStatusMap.put(customStatus.getStatusId(), customStatus);
-            logger.debug("Load status from database. " + customStatus.getScore() + " - " + customStatus.getStatusLink());
+            logger.debug("Load status from database. {} - {}", customStatus.getScore(), customStatus.getStatusLink());
         }
 
         if (fetchedStatusMap.size() > 0) {
-            logger.info("load status from database: " + fetchedStatusMap.size());
+            logger.info("load status from database: {}", fetchedStatusMap.size());
             setMinInteractionCount();
         }
     }
@@ -255,7 +256,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         if (DataUtil.isNullOrEmpty(languageKey)) {
             throw new IllegalLanguageKeyException(languageKey);
         } else {
-            logger.debug("Set languageKey:" + languageKey);
+            logger.debug("Set languageKey:{}", languageKey);
         }
     }
 

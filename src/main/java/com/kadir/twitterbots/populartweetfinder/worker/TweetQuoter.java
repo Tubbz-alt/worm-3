@@ -8,7 +8,8 @@ import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
 import com.kadir.twitterbots.populartweetfinder.handler.RateLimitHandler;
 import com.kadir.twitterbots.populartweetfinder.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.Status;
 import twitter4j.StatusUpdate;
 import twitter4j.Twitter;
@@ -29,14 +30,14 @@ import java.util.concurrent.TimeUnit;
  * Time :   15:50
  */
 public class TweetQuoter extends BaseScheduledRunnable {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private Twitter twitter;
     private StatusDao statusDao;
     private int quoteLimit;
     private int quoteHour;
     private int quoteMinute;
-    private final int QUOTE_RETRY_COUNT = 5;
+    private static final int QUOTE_RETRY_COUNT = 5;
 
     public TweetQuoter() {
         super(TaskPriority.VERY_HIGH);
@@ -47,7 +48,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
     public void schedule() {
         Long quoteTime = LocalDateTime.now().until(LocalDate.now().atTime(quoteHour, quoteMinute, 0), ChronoUnit.SECONDS);
         scheduledFuture = executorService.scheduleAtFixedRate(this, quoteTime, 1440, TimeUnit.SECONDS);
-        logger.info("schedule " + this.getClass().getSimpleName() + " to run at " + quoteHour + ":" + String.format("%02d", quoteMinute));
+        logger.info("schedule {} to run at {}:{}", this.getClass().getSimpleName(), quoteHour, String.format("%02d", quoteMinute));
         TaskScheduler.addScheduledTask(this);
     }
 
@@ -61,7 +62,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
             quoteTweets(popularStatuses);
             TaskScheduler.shutdownAllTasks();
         } catch (TwitterException e) {
-            logger.error(e);
+            logger.error("Twitter authentication error!", e);
         }
     }
 
@@ -91,12 +92,12 @@ public class TweetQuoter extends BaseScheduledRunnable {
             RateLimitHandler.handle(twitter.getId(), status.getRateLimitStatus(), ApiProcessType.SHOW_STATUS);
         } catch (TwitterException e) {
             if (e.getErrorCode() == 144) {
-                logger.error("Status could not be found. Status id: " + id);
+                logger.error("Status could not be found. Status id: {}", id);
             } else {
-                logger.error("Error while getting status details." + e);
+                logger.error("Error while getting status details. {}", e);
             }
         } catch (InterruptedException e) {
-            logger.error(e);
+            logger.error("Exception occured!", e);
             Thread.currentThread().interrupt();
         }
         return status;
@@ -108,7 +109,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
         String accessToken = System.getProperty("quoterAccessToken");
         String accessTokenSecret = System.getProperty("quoterAccessTokenSecret");
         twitter = BotAuthenticator.authenticate(consumerKey, consumerSecret, accessToken, accessTokenSecret);
-        logger.info("authenticate: " + twitter.getScreenName() + " - " + twitter.getId());
+        logger.info("authenticate: {} - {}", twitter.getScreenName(), twitter.getId());
     }
 
     private void quoteTweets(List<CustomStatus> mostPopularTweets) {
@@ -130,7 +131,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
 
                 Status updatedStatus = twitter.updateStatus(statusUpdate);
                 statusDao.setStatusQuoted(s.getId());
-                logger.info("new status: " + updatedStatus.getText());
+                logger.info("new status: {}", updatedStatus.getText());
                 if (i > 0) {
                     RateLimitHandler.handle(twitter.getId(), updatedStatus.getRateLimitStatus(), ApiProcessType.UPDATE_STATUS);
                     Thread.sleep(50 * 1000L);
@@ -143,17 +144,17 @@ public class TweetQuoter extends BaseScheduledRunnable {
                     logger.error("retry count limit exceeded. program finished.");
                     return;
                 }
-                logger.info("wait 1 minute before retry. retry count: " + retryCount);
+                logger.info("wait 1 minute before retry. retry count: {}", retryCount);
                 try {
                     Thread.sleep(60 * 1000L);
                 } catch (InterruptedException e1) {
-                    logger.error(e1);
+                    logger.error("Thread interrupted!", e1);
                     Thread.currentThread().interrupt();
 
                 }
                 i++;
             } catch (InterruptedException e) {
-                logger.error(e);
+                logger.error("Exception occured!", e);
                 Thread.currentThread().interrupt();
             }
         }
@@ -163,10 +164,10 @@ public class TweetQuoter extends BaseScheduledRunnable {
 
     private void loadArguments() {
         this.quoteLimit = Integer.parseInt(System.getProperty("quoteLimit", "13"));
-        logger.debug("set quoteLimit:" + quoteLimit);
+        logger.debug("set quoteLimit:{}", quoteLimit);
         this.quoteHour = Integer.parseInt(System.getProperty("quoteHour", "22"));
-        logger.debug("set quoteHour:" + quoteHour);
+        logger.debug("set quoteHour:{}", quoteHour);
         this.quoteMinute = Integer.parseInt(System.getProperty("quoteMinute", "0"));
-        logger.debug("set quoteMinute:" + quoteMinute);
+        logger.debug("set quoteMinute:{}", quoteMinute);
     }
 }
