@@ -71,12 +71,14 @@ public class TweetQuoter extends BaseScheduledRunnable {
         List<CustomStatus> savedStatuses = statusDao.getTodaysStatuses();
 
         Iterator<CustomStatus> iterator = savedStatuses.iterator();
+        int i = 1;
         while (iterator.hasNext()) {
             CustomStatus customStatus = iterator.next();
-            Status s = showStatus(customStatus.getStatusId());
+            Status s = showStatus(customStatus.getStatusId(), i % 10 == 0);
             if (s == null) {
                 iterator.remove();
             }
+            i++;
         }
 
         savedStatuses.sort(Comparator.comparing(CustomStatus::getScore).reversed());
@@ -85,11 +87,13 @@ public class TweetQuoter extends BaseScheduledRunnable {
         return savedStatuses;
     }
 
-    private Status showStatus(Long id) {
+    private Status showStatus(Long id, boolean handleRateLimit) {
         Status status = null;
         try {
             status = twitter.showStatus(id);
-            RateLimitHandler.handle(twitter.getId(), status.getRateLimitStatus(), ApiProcessType.SHOW_STATUS);
+            if (handleRateLimit) {
+                RateLimitHandler.handle(twitter.getId(), status.getRateLimitStatus(), ApiProcessType.SHOW_STATUS);
+            }
         } catch (TwitterException e) {
             if (e.getErrorCode() == 144) {
                 logger.error("Status could not be found. Status id: {}", id);
