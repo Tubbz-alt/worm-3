@@ -1,4 +1,4 @@
-rootProject.name = 'PopularTweetFinder'
+rootProject.name = 'worm'
 include(":bot-authenticator")
 include(":rate-limit-handler")
 project(':bot-authenticator').projectDir = new File('../bot-authenticator')
