@@ -1,18 +1,18 @@
 package com.kadir.twitterbots.populartweetfinder.worker;
 
-import com.kadir.twitterbots.populartweetfinder.authentication.BotAuthenticator;
+import com.kadir.twitterbots.authentication.BotAuthenticator;
 import com.kadir.twitterbots.populartweetfinder.dao.StatusDao;
-import com.kadir.twitterbots.populartweetfinder.entity.ApiProcessType;
 import com.kadir.twitterbots.populartweetfinder.entity.CustomStatus;
 import com.kadir.twitterbots.populartweetfinder.entity.TaskPriority;
 import com.kadir.twitterbots.populartweetfinder.exceptions.IllegalLanguageKeyException;
 import com.kadir.twitterbots.populartweetfinder.filter.InteractionCountFilter;
-import com.kadir.twitterbots.populartweetfinder.handler.RateLimitHandler;
 import com.kadir.twitterbots.populartweetfinder.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.populartweetfinder.scheduler.TaskScheduler;
 import com.kadir.twitterbots.populartweetfinder.util.ApplicationConstants;
 import com.kadir.twitterbots.populartweetfinder.util.DataUtil;
 import com.kadir.twitterbots.populartweetfinder.util.StatusUtil;
+import com.kadir.twitterbots.ratelimithandler.handler.RateLimitHandler;
+import com.kadir.twitterbots.ratelimithandler.process.ApiProcessType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.Query;
