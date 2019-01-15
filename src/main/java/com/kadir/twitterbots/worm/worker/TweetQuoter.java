@@ -55,16 +55,12 @@ public class TweetQuoter extends BaseScheduledRunnable {
 
     @Override
     public void run() {
-        try {
-            TaskScheduler.shutdownLowerPriorityTasks(this);
-            statusDao = new StatusDao();
-            authenticate();
-            List<CustomStatus> popularStatuses = loadPopularTweetsFromDatabase();
-            quoteTweets(popularStatuses);
-            TaskScheduler.shutdownAllTasks();
-        } catch (TwitterException e) {
-            logger.error("Twitter com.kadir.twitterbots.authentication error!", e);
-        }
+        TaskScheduler.shutdownLowerPriorityTasks(this);
+        statusDao = new StatusDao();
+        authenticate();
+        List<CustomStatus> popularStatuses = loadPopularTweetsFromDatabase();
+        quoteTweets(popularStatuses);
+        TaskScheduler.shutdownAllTasks();
     }
 
     private List<CustomStatus> loadPopularTweetsFromDatabase() {
@@ -108,7 +104,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
         return status;
     }
 
-    private void authenticate() throws TwitterException {
+    private void authenticate() {
         twitter = BotAuthenticator.authenticate(WormConstants.AUTH_PROPERTIES_FILE_NAME, WormConstants.QUOTE_API_KEYS_PREFIX);
     }
 
