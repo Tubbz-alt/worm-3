@@ -190,7 +190,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
             for (int i = statusLimitToKeep; i < customStatusList.size(); i++) {
                 CustomStatus customStatus = fetchedStatusMap.remove(customStatusList.get(i).getStatusId());
                 if (customStatus != null) {
-                    logger.info("Remove status from map: {}", customStatus.getScore(), customStatus.getStatusLink());
+                    logger.info("Remove status from map: {} - {}", customStatus.getScore(), customStatus.getStatusLink());
                 }
             }
 
