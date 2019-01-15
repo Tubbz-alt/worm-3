@@ -1,13 +1,14 @@
 package com.kadir.twitterbots.worm.worker;
 
 import com.kadir.twitterbots.authentication.BotAuthenticator;
+import com.kadir.twitterbots.ratelimithandler.handler.RateLimitHandler;
+import com.kadir.twitterbots.ratelimithandler.process.ApiProcessType;
 import com.kadir.twitterbots.worm.dao.StatusDao;
 import com.kadir.twitterbots.worm.entity.CustomStatus;
 import com.kadir.twitterbots.worm.entity.TaskPriority;
 import com.kadir.twitterbots.worm.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.worm.scheduler.TaskScheduler;
-import com.kadir.twitterbots.ratelimithandler.handler.RateLimitHandler;
-import com.kadir.twitterbots.ratelimithandler.process.ApiProcessType;
+import com.kadir.twitterbots.worm.util.WormConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.Status;
@@ -108,12 +109,7 @@ public class TweetQuoter extends BaseScheduledRunnable {
     }
 
     private void authenticate() throws TwitterException {
-        String consumerKey = System.getProperty("quoterConsumerKey");
-        String consumerSecret = System.getProperty("quoterConsumerSecret");
-        String accessToken = System.getProperty("quoterAccessToken");
-        String accessTokenSecret = System.getProperty("quoterAccessTokenSecret");
-        twitter = BotAuthenticator.authenticate(consumerKey, consumerSecret, accessToken, accessTokenSecret);
-        logger.info("authenticate: {} - {}", twitter.getScreenName(), twitter.getId());
+        twitter = BotAuthenticator.authenticate(WormConstants.AUTH_PROPERTIES_FILE_NAME, WormConstants.QUOTE_API_KEYS_PREFIX);
     }
 
     private void quoteTweets(List<CustomStatus> mostPopularTweets) {

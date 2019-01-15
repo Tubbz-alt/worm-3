@@ -10,34 +10,20 @@
             <pattern>%-5p %d{yyyy-MM-dd HH:mm:ss} %-33c{1} %m%n</pattern>
         </encoder>
     </appender>
-    <appender name="debug" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>log/debug.log</File>
+    <appender name="worm" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>log/worm.log</File>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <totalSizeCap>50MB</totalSizeCap>
-            <fileNamePattern>log/old/debug-%d{yyyy-MM-dd, GMT+3}.log.gz</fileNamePattern>
+            <fileNamePattern>log/old/worm-%d{yyyy-MM-dd, GMT+3}.log.gz</fileNamePattern>
         </rollingPolicy>
         <encoder>
             <pattern>%-5p %d{yyyy-MM-dd HH:mm:ss} %-35c{1} %m%n</pattern>
-        </encoder>
-    </appender>
-    <appender name="info" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>log/info.log</File>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
-        </filter>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <totalSizeCap>50MB</totalSizeCap>
-            <fileNamePattern>log/old/info-%d{yyyy-MM-dd, GMT+3}.log.gz</fileNamePattern>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-33c{1} %m%n</pattern>
         </encoder>
     </appender>
     <logger name="twitter4j" level="OFF"/>
     <logger name="com.optimaize.langdetect" level="OFF"/>
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
-        <appender-ref ref="debug"/>
-        <appender-ref ref="info"/>
+        <appender-ref ref="worm"/>
     </root>
 </configuration>

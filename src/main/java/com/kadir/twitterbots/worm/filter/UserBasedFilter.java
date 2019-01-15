@@ -5,7 +5,7 @@ import com.kadir.twitterbots.worm.entity.IgnoredUser;
 import com.kadir.twitterbots.worm.entity.TaskPriority;
 import com.kadir.twitterbots.worm.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.worm.scheduler.TaskScheduler;
-import com.kadir.twitterbots.worm.util.ApplicationConstants;
+import com.kadir.twitterbots.worm.util.WormConstants;
 import com.kadir.twitterbots.worm.util.DataUtil;
 import com.kadir.twitterbots.ratelimithandler.handler.RateLimitHandler;
 import com.kadir.twitterbots.ratelimithandler.process.ApiProcessType;
@@ -27,8 +27,8 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.kadir.twitterbots.worm.util.ApplicationConstants.DEFAULT_DELAY_FOR_SCHEDULED_TASKS;
-import static com.kadir.twitterbots.worm.util.ApplicationConstants.DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS;
+import static com.kadir.twitterbots.worm.util.WormConstants.DEFAULT_DELAY_FOR_SCHEDULED_TASKS;
+import static com.kadir.twitterbots.worm.util.WormConstants.DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS;
 
 /**
  * @author akadir
@@ -232,7 +232,7 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
             diff = period.getYears() * 365 + period.getMonths() * 30 + period.getDays();
         }
 
-        return diff > ApplicationConstants.MAX_PASSIVE_PERIOD;
+        return diff > WormConstants.MAX_PASSIVE_PERIOD;
     }
 
 }

@@ -2,7 +2,7 @@ package com.kadir.twitterbots.worm;
 
 import com.kadir.twitterbots.worm.dao.DatabaseInitialiser;
 import com.kadir.twitterbots.worm.exceptions.PropertyNotLoadedException;
-import com.kadir.twitterbots.worm.util.ApplicationConstants;
+import com.kadir.twitterbots.worm.util.WormConstants;
 import com.kadir.twitterbots.worm.worker.TweetFetcher;
 import com.kadir.twitterbots.worm.worker.TweetQuoter;
 import org.slf4j.Logger;
@@ -47,7 +47,7 @@ public class Worm {
     private void setVmArgumentsFromPropertyFile() {
         Properties properties = new Properties();
 
-        File propertyFile = new File(ApplicationConstants.PROPERTIES_FILE_NAME);
+        File propertyFile = new File(WormConstants.PROPERTIES_FILE_NAME);
 
         try (InputStream input = new FileInputStream(propertyFile)) {
             properties.load(input);
@@ -60,10 +60,10 @@ public class Worm {
                 logger.info("Set system argument {}:{}", key, value);
             }
 
-            logger.info("All properties loaded from file: {}", ApplicationConstants.PROPERTIES_FILE_NAME);
+            logger.info("All properties loaded from file: {}", WormConstants.PROPERTIES_FILE_NAME);
         } catch (IOException e) {
-            logger.error("error occurred while getting properties from file. " + ApplicationConstants.PROPERTIES_FILE_NAME, e);
-            throw new PropertyNotLoadedException(ApplicationConstants.PROPERTIES_FILE_NAME);
+            logger.error("error occurred while getting properties from file. " + WormConstants.PROPERTIES_FILE_NAME, e);
+            throw new PropertyNotLoadedException(WormConstants.PROPERTIES_FILE_NAME);
         }
     }
 }

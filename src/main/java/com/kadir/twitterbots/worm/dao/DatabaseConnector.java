@@ -1,6 +1,6 @@
 package com.kadir.twitterbots.worm.dao;
 
-import com.kadir.twitterbots.worm.util.ApplicationConstants;
+import com.kadir.twitterbots.worm.util.WormConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,7 @@ import java.sql.SQLException;
  */
 public class DatabaseConnector {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseConnector.class);
-    private static final String DATABASE_URL = "jdbc:sqlite:" + ApplicationConstants.RESOURCES_FOLDER_NAME + "popularTweetsDb";
+    private static final String DATABASE_URL = "jdbc:sqlite:" + WormConstants.RESOURCES_FOLDER_NAME + "popularTweetsDb";
     private static Connection connection;
 
     private DatabaseConnector() {

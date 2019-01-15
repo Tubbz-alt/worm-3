@@ -1,6 +1,8 @@
 package com.kadir.twitterbots.worm.worker;
 
 import com.kadir.twitterbots.authentication.BotAuthenticator;
+import com.kadir.twitterbots.ratelimithandler.handler.RateLimitHandler;
+import com.kadir.twitterbots.ratelimithandler.process.ApiProcessType;
 import com.kadir.twitterbots.worm.dao.StatusDao;
 import com.kadir.twitterbots.worm.entity.CustomStatus;
 import com.kadir.twitterbots.worm.entity.TaskPriority;
@@ -8,11 +10,9 @@ import com.kadir.twitterbots.worm.exceptions.IllegalLanguageKeyException;
 import com.kadir.twitterbots.worm.filter.InteractionCountFilter;
 import com.kadir.twitterbots.worm.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.worm.scheduler.TaskScheduler;
-import com.kadir.twitterbots.worm.util.ApplicationConstants;
+import com.kadir.twitterbots.worm.util.WormConstants;
 import com.kadir.twitterbots.worm.util.DataUtil;
 import com.kadir.twitterbots.worm.util.StatusUtil;
-import com.kadir.twitterbots.ratelimithandler.handler.RateLimitHandler;
-import com.kadir.twitterbots.ratelimithandler.process.ApiProcessType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.Query;
@@ -98,11 +98,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
     }
 
     private void authenticate() {
-        String consumerKey = System.getProperty("finderConsumerKey");
-        String consumerSecret = System.getProperty("finderConsumerSecret");
-        String accessToken = System.getProperty("finderAccessToken");
-        String accessTokenSecret = System.getProperty("finderAccessTokenSecret");
-        twitter = BotAuthenticator.authenticate(consumerKey, consumerSecret, accessToken, accessTokenSecret);
+        twitter = BotAuthenticator.authenticate(WormConstants.AUTH_PROPERTIES_FILE_NAME, WormConstants.FETCH_API_KEYS_PREFIX);
     }
 
     private void fetchTweets() throws TwitterException, InterruptedException {
@@ -219,7 +215,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
 
         while (iterator.hasNext()) {
             CustomStatus customStatus = iterator.next();
-            if (ChronoUnit.MINUTES.between(customStatus.getFetchedAt(), now) > ApplicationConstants.CHECK_DELETED_STATUSES_PERIOD) {
+            if (ChronoUnit.MINUTES.between(customStatus.getFetchedAt(), now) > WormConstants.CHECK_DELETED_STATUSES_PERIOD) {
                 try {
                     Status s = twitter.showStatus(customStatus.getStatusId());
                     customStatus = new CustomStatus(s);

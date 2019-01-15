@@ -31,8 +31,8 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.kadir.twitterbots.worm.util.ApplicationConstants.DEFAULT_DELAY_FOR_SCHEDULED_TASKS;
-import static com.kadir.twitterbots.worm.util.ApplicationConstants.DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS;
+import static com.kadir.twitterbots.worm.util.WormConstants.DEFAULT_DELAY_FOR_SCHEDULED_TASKS;
+import static com.kadir.twitterbots.worm.util.WormConstants.DEFAULT_INITIAL_DELAY_FOR_SCHEDULED_TASKS;
 
 /**
  * @author akadir
