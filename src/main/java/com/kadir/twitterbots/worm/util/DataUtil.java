@@ -1,7 +1,9 @@
 package com.kadir.twitterbots.worm.util;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
 
 /**
  * @author akadir
@@ -9,6 +11,7 @@ import java.util.Calendar;
  * Time: 14:24
  */
 public class DataUtil {
+    public static List<String> punctuationList = Arrays.asList(".", ",", "’", "!", "?", " ", ":", ";", "-", "(", ")", "[", "]", "{", "}", "'", "\"");
 
     private DataUtil() {
     }
