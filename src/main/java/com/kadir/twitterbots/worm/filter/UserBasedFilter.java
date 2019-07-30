@@ -1,21 +1,17 @@
 package com.kadir.twitterbots.worm.filter;
 
+import com.kadir.twitterbots.ratelimithandler.handler.RateLimitHandler;
+import com.kadir.twitterbots.ratelimithandler.process.ApiProcessType;
 import com.kadir.twitterbots.worm.dao.UserDao;
 import com.kadir.twitterbots.worm.entity.IgnoredUser;
 import com.kadir.twitterbots.worm.entity.TaskPriority;
 import com.kadir.twitterbots.worm.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.worm.scheduler.TaskScheduler;
-import com.kadir.twitterbots.worm.util.WormConstants;
 import com.kadir.twitterbots.worm.util.DataUtil;
-import com.kadir.twitterbots.ratelimithandler.handler.RateLimitHandler;
-import com.kadir.twitterbots.ratelimithandler.process.ApiProcessType;
+import com.kadir.twitterbots.worm.util.WormConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.IDs;
-import twitter4j.Status;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
-import twitter4j.User;
+import twitter4j.*;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -150,13 +146,10 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
             }
         } catch (TwitterException e) {
             logger.error(e.getErrorMessage());
-        } catch (InterruptedException e) {
-            logger.error("Thread interrupted", e);
-            Thread.currentThread().interrupt();
         }
     }
 
-    private void addUserIntoIgnoredUsers(Long userId) throws InterruptedException {
+    private void addUserIntoIgnoredUsers(Long userId) {
         try {
             User user = twitter.showUser(userId);
             RateLimitHandler.handle(twitter.getId(), user.getRateLimitStatus(), ApiProcessType.SHOW_USER);
@@ -193,9 +186,6 @@ public class UserBasedFilter extends BaseScheduledRunnable implements StatusFilt
                 } else {
                     logger.error("An error occured while getting user information from twitter", e);
                 }
-            } catch (InterruptedException e) {
-                logger.error("Thread interrupted. ", e);
-                Thread.currentThread().interrupt();
             }
         }
         logger.info("finish clean up ignored users task");

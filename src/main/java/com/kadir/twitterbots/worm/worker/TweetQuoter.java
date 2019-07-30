@@ -97,9 +97,6 @@ public class TweetQuoter extends BaseScheduledRunnable {
             } else {
                 logger.error("Error while getting status details. {}", e);
             }
-        } catch (InterruptedException e) {
-            logger.error("Exception occured!", e);
-            Thread.currentThread().interrupt();
         }
         return status;
     }

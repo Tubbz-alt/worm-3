@@ -10,27 +10,17 @@ import com.kadir.twitterbots.worm.exceptions.IllegalLanguageKeyException;
 import com.kadir.twitterbots.worm.filter.InteractionCountFilter;
 import com.kadir.twitterbots.worm.scheduler.BaseScheduledRunnable;
 import com.kadir.twitterbots.worm.scheduler.TaskScheduler;
-import com.kadir.twitterbots.worm.util.WormConstants;
 import com.kadir.twitterbots.worm.util.DataUtil;
 import com.kadir.twitterbots.worm.util.StatusUtil;
+import com.kadir.twitterbots.worm.util.WormConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Query;
-import twitter4j.QueryResult;
-import twitter4j.Status;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
+import twitter4j.*;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -83,9 +73,6 @@ public class TweetFetcher extends BaseScheduledRunnable {
             fetchTweets();
         } catch (TwitterException e) {
             logger.error("Error while fetching tweets.", e);
-        } catch (InterruptedException e) {
-            logger.error("Thread interrupted", e);
-            Thread.currentThread().interrupt();
         } catch (Exception e) {
             logger.error("An error occured!", e);
         }
@@ -101,7 +88,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         twitter = BotAuthenticator.authenticate(WormConstants.AUTH_PROPERTIES_FILE_NAME, WormConstants.FETCH_API_KEYS_PREFIX);
     }
 
-    private void fetchTweets() throws TwitterException, InterruptedException {
+    private void fetchTweets() throws TwitterException {
         List<Status> statuses;
         Query query = new Query("lang:" + languageKey);
         query.setCount(100);
@@ -122,7 +109,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         } while (query != null && !isCancelled);
     }
 
-    private void checkStatus(Status status) throws InterruptedException {
+    private void checkStatus(Status status) {
         if (status.isRetweet()) {
             status = status.getRetweetedStatus();
 
@@ -140,7 +127,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         }
     }
 
-    private void addStatus(Status newFetchedStatus) throws InterruptedException {
+    private void addStatus(Status newFetchedStatus) {
         CustomStatus customStatus = fetchedStatusMap.get(newFetchedStatus.getId());
         if (customStatus != null) {
             if (customStatus.getScore() != StatusUtil.calculateInteractionCount(newFetchedStatus)) {
@@ -180,7 +167,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         return !userStatusList.isEmpty() ? userStatusList.get(0) : null;
     }
 
-    private void removeStatusesWithLowestInteractionFromMap() throws InterruptedException {
+    private void removeStatusesWithLowestInteractionFromMap() {
         List<CustomStatus> customStatusList = new ArrayList<>(fetchedStatusMap.values());
 
         removeDeletedStatuses(customStatusList);
@@ -209,7 +196,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         logger.info("Set minInteractionCount:{}", InteractionCountFilter.getMinInteractionCount());
     }
 
-    private void removeDeletedStatuses(List<CustomStatus> customStatusList) throws InterruptedException {
+    private void removeDeletedStatuses(List<CustomStatus> customStatusList) {
         Iterator<CustomStatus> iterator = customStatusList.iterator();
         LocalDateTime now = LocalDateTime.now();
 
