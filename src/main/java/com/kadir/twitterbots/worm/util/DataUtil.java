@@ -11,7 +11,7 @@ import java.util.List;
  * Time: 14:24
  */
 public class DataUtil {
-    public static List<String> punctuationList = Arrays.asList(".", ",", "’", "!", "?", " ", ":", ";", "-", "(", ")", "[", "]", "{", "}", "'", "\"");
+    public static final List<String> PUNCTUATION_LIST = Arrays.asList(".", ",", "’", "!", "?", " ", ":", ";", "-", "(", ")", "[", "]", "{", "}", "'", "\"");
 
     private DataUtil() {
     }

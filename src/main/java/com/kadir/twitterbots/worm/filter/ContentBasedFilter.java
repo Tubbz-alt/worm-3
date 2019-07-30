@@ -112,7 +112,7 @@ public class ContentBasedFilter extends BaseScheduledRunnable implements StatusF
 
     private boolean containsIgnoredWord(String lowerCaseContent) {
         for (String word : ignoredWords) {
-            for (String punctuation : DataUtil.punctuationList) {
+            for (String punctuation : DataUtil.PUNCTUATION_LIST) {
                 if (lowerCaseContent.contains(word.concat(punctuation)) || lowerCaseContent.contains(punctuation.concat(word))) {
                     return true;
                 }
