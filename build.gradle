@@ -5,26 +5,34 @@ apply plugin: 'java'
 sourceCompatibility = 1.8
 
 repositories {
-    mavenCentral()
-    maven {
-        url "https://raw.github.com/ahmetaa/maven-repo/master"
-    }
+  mavenCentral()
+  maven {
+    url "https://raw.github.com/ahmetaa/maven-repo/master"
+  }
+}
+
+jar {
+  manifest {
+    attributes(
+            'Main-Class': 'com.kadir.twitterbots.worm.Worm'
+    )
+  }
 }
 
 dependencies {
-    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-    // https://mvnrepository.com/artifact/org.twitter4j/twitter4j-core
-    compile group: 'org.twitter4j', name: 'twitter4j-core', version: '4.0.7'
-    // https://mvnrepository.com/artifact/com.vdurmont/emoji-java
-    compile group: 'com.vdurmont', name: 'emoji-java', version: '3.3.0'
-    // https://github.com/ahmetaa/zemberek-nlp
-    compile group: 'zemberek-nlp', name: 'lang-id', version: '0.11.0'
-    // https://mvnrepository.com/artifact/com.optimaize.languagedetector/language-detector
-    compile group: 'com.optimaize.languagedetector', name: 'language-detector', version: '0.6'
-    // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-    compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.25.2'
-    compile project(":bot-authenticator")
-    compile project(":rate-limit-handler")
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+  compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+  compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+  // https://mvnrepository.com/artifact/org.twitter4j/twitter4j-core
+  compile group: 'org.twitter4j', name: 'twitter4j-core', version: '4.0.7'
+  // https://mvnrepository.com/artifact/com.vdurmont/emoji-java
+  compile group: 'com.vdurmont', name: 'emoji-java', version: '3.3.0'
+  // https://github.com/ahmetaa/zemberek-nlp
+  compile group: 'zemberek-nlp', name: 'lang-id', version: '0.11.0'
+  // https://mvnrepository.com/artifact/com.optimaize.languagedetector/language-detector
+  compile group: 'com.optimaize.languagedetector', name: 'language-detector', version: '0.6'
+  // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+  compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.25.2'
+  compile project(":bot-authenticator")
+  compile project(":rate-limit-handler")
+  testCompile group: 'junit', name: 'junit', version: '4.12'
 }
