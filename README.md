@@ -2,7 +2,7 @@
 
 Finds daily popular tweets.
 
-#### alligator.properties
+#### worm.properties
 
 ```properties
 statusLimitToKeep=30
@@ -15,7 +15,7 @@ quoteHour=22
 quoteMinute=00
 ```
 
-#### alligator.auth
+#### auth.properties
 ```properties
 #Twitter API Auth keys and options
 finder-consumer-key=
