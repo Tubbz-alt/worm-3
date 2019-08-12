@@ -1,6 +1,15 @@
 # Worm
 
+[![gradle-version](https://img.shields.io/badge/gradle-5.5.1-brightgreen)](https://img.shields.io/badge/gradle-5.5.1-brightgreen)
+
 Finds daily popular tweets.
+
+### Usage
+clone project and set required properties in worm.properties and worm.auth files, and then execute: 
+
+```groovy
+gradle run
+```
 
 #### worm.properties
 
