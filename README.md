@@ -1,5 +1,6 @@
 # Worm
 
+[![Build Status](https://travis-ci.org/akadir/worm.svg?branch=master)](https://travis-ci.org/akadir/worm)
 [![gradle-version](https://img.shields.io/badge/gradle-5.5.1-brightgreen)](https://img.shields.io/badge/gradle-5.5.1-brightgreen)
 
 Finds daily popular tweets.
