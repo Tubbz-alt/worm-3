@@ -162,13 +162,13 @@ public class ContentBasedFilter extends BaseScheduledRunnable implements StatusF
             initializeZemberekLanguageIdentifier();
             initializeOptimaizeLanguageDetector();
         } catch (IOException e) {
-            logger.error("Error occured while initialising language identifiers.", e);
+            logger.error("Error occurred while initialising language identifiers.", e);
             throw new LanguageIdentifierInitialisingException(e);
         }
     }
 
     private void initializeZemberekLanguageIdentifier() throws IOException {
-        languageIdentifier = LanguageIdentifier.fromInternalModelGroup("tr_group");
+        languageIdentifier = LanguageIdentifier.fromInternalModels();
         logger.info("Zemberek language identifier has been initialised");
     }
 
