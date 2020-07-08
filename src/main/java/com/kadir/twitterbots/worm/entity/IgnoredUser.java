@@ -22,11 +22,11 @@ public class IgnoredUser {
     }
 
     private void getFromResultSet(ResultSet resultSet) throws SQLException {
-        userId = resultSet.getLong("userId");
-        screenName = resultSet.getString("screenName");
-        createdDate = resultSet.getString("createdDate");
-        passiveSince = resultSet.getString("passiveSince");
-        lastCheck = resultSet.getString("lastCheck");
+        userId = resultSet.getLong("user_id");
+        screenName = resultSet.getString("screen_name");
+        createdDate = resultSet.getString("created_date");
+        passiveSince = resultSet.getString("passive_since");
+        lastCheck = resultSet.getString("last_check");
     }
 
     public long getUserId() {

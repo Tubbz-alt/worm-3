@@ -39,15 +39,15 @@ public class CustomStatus {
 
     private void getFromResultSet(ResultSet resultSet) throws SQLException {
         id = resultSet.getLong("id");
-        statusId = resultSet.getLong("statusId");
-        userId = resultSet.getLong("userId");
+        statusId = resultSet.getLong("status_id");
+        userId = resultSet.getLong("user_id");
         score = resultSet.getInt("score");
-        foundDate = resultSet.getString("foundDate");
-        statusCreationDate = resultSet.getString("statusCreationDate");
-        isQuoted = resultSet.getBoolean("isQuoted");
-        quotedDate = resultSet.getString("quotedDate");
-        statusLink = resultSet.getString("statusLink");
-        statusText = resultSet.getString("statusText");
+        foundDate = resultSet.getString("found_date");
+        statusCreationDate = resultSet.getString("status_creation_date");
+        isQuoted = resultSet.getBoolean("is_quoted");
+        quotedDate = resultSet.getString("quoted_date");
+        statusLink = resultSet.getString("status_link");
+        statusText = resultSet.getString("status_text");
         fetchedAt = LocalDateTime.now();
     }
 

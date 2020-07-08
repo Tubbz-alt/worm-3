@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 
 /**
  * @author akadir
@@ -28,7 +29,12 @@ public class DatabaseConnector {
 
     private static Connection openConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection(DATABASE_URL);
+            String url = "jdbc:postgresql://localhost:5432/worm-" + System.getProperty("languageKey");
+            Properties props = new Properties();
+            props.setProperty("user", "postgres");
+            props.setProperty("password", "password");
+
+            connection = DriverManager.getConnection(url, props);
             DatabaseMetaData meta = connection.getMetaData();
             logger.debug("Connected to database: {}", meta.getURL());
         }

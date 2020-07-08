@@ -6,11 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.Status;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -37,8 +33,9 @@ public class StatusDao {
         Long id = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("INSERT INTO PopularTweets(statusId, userId, score, foundDate, statusCreationDate, isQuoted, quotedDate, statusLink, statusText) " +
-                    "VALUES(?,?,?,?,?,?,?,?,?)");
+            preparedStatement = conn.prepareStatement("INSERT INTO popular_tweets(status_id, user_id, score, found_date, status_creation_date, is_quoted, quoted_date, status_link, status_text) " +
+                    "VALUES(?,?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
+
             preparedStatement.setLong(1, status.getStatusId());
             preparedStatement.setLong(2, status.getUserId());
             preparedStatement.setInt(3, status.getScore());
@@ -48,6 +45,7 @@ public class StatusDao {
             preparedStatement.setString(7, "");
             preparedStatement.setString(8, status.getStatusLink());
             preparedStatement.setString(9, status.getStatusText());
+
             int affectedRows = preparedStatement.executeUpdate();
 
             if (affectedRows == 0) {
@@ -62,7 +60,7 @@ public class StatusDao {
                 }
             }
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during status save: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -73,14 +71,14 @@ public class StatusDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("UPDATE PopularTweets SET score = ? WHERE id = ?");
+            preparedStatement = conn.prepareStatement("UPDATE popular_tweets SET score = ? WHERE id = ?");
 
             preparedStatement.setInt(1, customStatus.getScore());
             preparedStatement.setLong(2, customStatus.getId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during status update: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -96,8 +94,8 @@ public class StatusDao {
 
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("INSERT INTO PopularTweets(statusId, userId, score, foundDate, statusCreationDate, isQuoted, quotedDate, statusLink, statusText) " +
-                    "VALUES(?,?,?,?,?,?,?,?,?)");
+            preparedStatement = conn.prepareStatement("INSERT INTO popular_tweets(status_id, user_id, score, found_date, status_creation_date, is_quoted, quoted_date, status_link, status_text) " +
+                    "VALUES(?,?,?,?,?,?,?,?,?,?)");
             preparedStatement.setLong(1, status.getId());
             preparedStatement.setLong(2, status.getUser().getId());
             preparedStatement.setInt(3, statusScore);
@@ -107,9 +105,10 @@ public class StatusDao {
             preparedStatement.setString(7, "");
             preparedStatement.setString(8, statusLink);
             preparedStatement.setString(9, status.getText());
+
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during status save: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -119,12 +118,12 @@ public class StatusDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("DELETE FROM PopularTweets WHERE id = ?");
+            preparedStatement = conn.prepareStatement("DELETE FROM popular_tweets WHERE id = ?");
             preparedStatement.setLong(1, savedStatus.getId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during status remove: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -136,7 +135,7 @@ public class StatusDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("UPDATE PopularTweets SET score = ? WHERE statusId = ? AND foundDate = ?");
+            preparedStatement = conn.prepareStatement("UPDATE popular_tweets SET score = ? WHERE status_id = ? AND found_date = ?");
 
             preparedStatement.setInt(1, score);
             preparedStatement.setLong(2, statusId);
@@ -145,7 +144,7 @@ public class StatusDao {
             preparedStatement.executeUpdate();
 
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during today's status score update: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -155,8 +154,8 @@ public class StatusDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("UPDATE PopularTweets SET statusId = ?, score = ?, statusCreationDate = ?, statusLink = ?, statusText = ? " +
-                    "WHERE statusId = ? AND foundDate = ?");
+            preparedStatement = conn.prepareStatement("UPDATE popular_tweets SET status_id = ?, score = ?, status_creation_date = ?, status_link = ?, status_text = ? " +
+                    "WHERE status_id = ? AND found_date = ?");
             preparedStatement.setLong(1, newStatus.getId());
             preparedStatement.setInt(2, StatusUtil.calculateInteractionCount(newStatus));
             preparedStatement.setString(3, sqlDateFormat.format(newStatus.getCreatedAt()));
@@ -167,7 +166,7 @@ public class StatusDao {
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during user status change: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -180,7 +179,7 @@ public class StatusDao {
             PreparedStatement preparedStatement = null;
             try {
                 Connection conn = DatabaseConnector.getConnection();
-                preparedStatement = conn.prepareStatement("DELETE FROM PopularTweets WHERE statusId = ? AND foundDate = ?");
+                preparedStatement = conn.prepareStatement("DELETE FROM popular_tweets WHERE status_id = ? AND found_date = ?");
                 preparedStatement.setLong(1, statusId);
                 preparedStatement.setString(2, sqlDateFormat.format(new Date()));
 
@@ -188,7 +187,7 @@ public class StatusDao {
 
                 logger.info("Status was deleted. {}", customStatus.getStatusInformation());
             } catch (SQLException e) {
-                logger.error(e.getMessage());
+                logger.error("Error during today's status delete: ", e);
             } finally {
                 closeStatement(preparedStatement);
             }
@@ -203,7 +202,7 @@ public class StatusDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("SELECT * FROM PopularTweets WHERE foundDate = ? AND statusId = ?");
+            preparedStatement = connection.prepareStatement("SELECT * FROM popular_tweets WHERE found_date = ? AND status_id = ?");
 
             preparedStatement.setString(1, sqlDateFormat.format(new Date()));
             preparedStatement.setLong(2, statusId);
@@ -215,7 +214,7 @@ public class StatusDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during today's status get: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -233,7 +232,7 @@ public class StatusDao {
 
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("SELECT * FROM PopularTweets WHERE foundDate = ? AND statusId = ?");
+            preparedStatement = connection.prepareStatement("SELECT * FROM popular_tweets WHERE found_date = ? AND status_id = ?");
 
             preparedStatement.setString(1, sqlDateFormat.format(yesterday));
             preparedStatement.setLong(2, statusId);
@@ -245,7 +244,7 @@ public class StatusDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during yesterday's status get: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -260,7 +259,7 @@ public class StatusDao {
 
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("SELECT * FROM PopularTweets WHERE foundDate = ? ORDER BY score DESC");
+            preparedStatement = connection.prepareStatement("SELECT * FROM popular_tweets WHERE found_date = ? ORDER BY score DESC");
 
             preparedStatement.setString(1, sqlDateFormat.format(new Date()));
 
@@ -272,7 +271,7 @@ public class StatusDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during today's status get: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -287,7 +286,7 @@ public class StatusDao {
 
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("SELECT * FROM PopularTweets WHERE statusId = ? AND isQuoted = ?");
+            preparedStatement = connection.prepareStatement("SELECT * FROM popular_tweets WHERE status_id = ? AND is_quoted = ?");
 
             preparedStatement.setLong(1, statusId);
             preparedStatement.setBoolean(2, true);
@@ -299,7 +298,7 @@ public class StatusDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during status quoted check: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -312,7 +311,7 @@ public class StatusDao {
 
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("UPDATE PopularTweets SET isQuoted = ?, quotedDate = ? WHERE id = ?");
+            preparedStatement = connection.prepareStatement("UPDATE popular_tweets SET is_quoted = ?, quoted_date = ? WHERE id = ?");
 
             preparedStatement.setBoolean(1, true);
             preparedStatement.setString(2, sqlDateFormat.format(new Date()));
@@ -320,7 +319,7 @@ public class StatusDao {
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during status quoted set: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -332,7 +331,7 @@ public class StatusDao {
 
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM PopularTweets WHERE foundDate = ?");
+            preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM popular_tweets WHERE found_date = ?");
 
             preparedStatement.setString(1, sqlDateFormat.format(new Date()));
 
@@ -342,7 +341,7 @@ public class StatusDao {
                 count = resultSet.getInt(1);
             }
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during today's popular status count get: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -355,7 +354,7 @@ public class StatusDao {
             try {
                 statement.close();
             } catch (SQLException e) {
-                logger.error(e.getMessage());
+                logger.error("Error during statement close: ", e);
             }
         }
     }

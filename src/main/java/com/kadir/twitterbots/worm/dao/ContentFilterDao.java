@@ -27,7 +27,7 @@ public class ContentFilterDao {
         ResultSet resultSet = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("SELECT word FROM IgnoredKeyWords WHERE type = ?");
+            preparedStatement = conn.prepareStatement("SELECT word FROM ignored_keywords WHERE type = ?");
             preparedStatement.setInt(1, IgnoredWordType.WORD.getType());
             resultSet = preparedStatement.executeQuery();
             preparedStatement.setString(1, DataUtil.getYesterday());
@@ -36,7 +36,7 @@ public class ContentFilterDao {
                 ignoredWords.add(resultSet.getString(1).toLowerCase());
             }
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during ignored words get: ", e);
         } finally {
             closeResultSet(resultSet);
             closeStatement(preparedStatement);
@@ -50,7 +50,7 @@ public class ContentFilterDao {
         ResultSet resultSet = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("SELECT word FROM IgnoredKeyWords WHERE type = ?");
+            preparedStatement = conn.prepareStatement("SELECT word FROM ignored_keywords WHERE type = ?");
             preparedStatement.setInt(1, IgnoredWordType.USERNAME.getType());
             resultSet = preparedStatement.executeQuery();
             preparedStatement.setString(1, DataUtil.getYesterday());
@@ -59,7 +59,7 @@ public class ContentFilterDao {
                 ignoredUsernames.add(resultSet.getString(1).toLowerCase());
             }
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during ignored usernames get: ", e);
         } finally {
             closeResultSet(resultSet);
             closeStatement(preparedStatement);
@@ -72,7 +72,7 @@ public class ContentFilterDao {
             try {
                 resultSet.close();
             } catch (SQLException e) {
-                logger.error(e.getMessage());
+                logger.error("Error during result set close: ", e);
             }
         }
     }
@@ -82,7 +82,7 @@ public class ContentFilterDao {
             try {
                 statement.close();
             } catch (SQLException e) {
-                logger.error(e.getMessage());
+                logger.error("Error during statement close: ", e);
             }
         }
     }

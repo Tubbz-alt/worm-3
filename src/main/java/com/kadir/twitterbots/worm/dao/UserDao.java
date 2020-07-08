@@ -6,11 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import twitter4j.User;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -32,7 +28,7 @@ public class UserDao {
 
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("SELECT statusId FROM PopularTweets WHERE userId = ? AND foundDate = ?");
+            preparedStatement = conn.prepareStatement("SELECT statusId FROM popular_tweets WHERE user_id = ? AND found_date = ?");
             preparedStatement.setLong(1, userId);
             preparedStatement.setString(2, sqlDateFormat.format(new Date()));
 
@@ -43,7 +39,7 @@ public class UserDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during another tweet of user today get: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -61,7 +57,7 @@ public class UserDao {
 
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("SELECT DISTINCT(userId) FROM PopularTweets WHERE foundDate = ? AND  isQuoted = ?");
+            preparedStatement = connection.prepareStatement("SELECT DISTINCT(user_id) FROM popular_tweets WHERE found_date = ? AND  is_quoted = ?");
 
             preparedStatement.setString(1, sqlDateFormat.format(yesterday));
             preparedStatement.setBoolean(2, true);
@@ -73,7 +69,7 @@ public class UserDao {
             }
 
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during yesterday's quoted users get: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -85,13 +81,14 @@ public class UserDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("INSERT INTO IgnoredUsers(UserId, ScreenName) VALUES(?,?)");
+            preparedStatement = connection.prepareStatement("INSERT INTO ignored_users(user_id, screen_name) VALUES(?,?)");
 
             preparedStatement.setLong(1, user.getId());
             preparedStatement.setString(2, user.getScreenName());
+
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during ignored user insert: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -103,7 +100,7 @@ public class UserDao {
         ResultSet resultSet = null;
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("SELECT userId FROM IgnoredUsers WHERE passiveSince='' or (passiveSince != '' and lastCheck=?)");
+            preparedStatement = connection.prepareStatement("SELECT user_id FROM ignored_users WHERE passive_since='' or (passive_since != '' and last_check=?)");
             preparedStatement.setString(1, sqlDateFormat.format(new Date()));
 
             resultSet = preparedStatement.executeQuery();
@@ -112,7 +109,7 @@ public class UserDao {
                 ignoredUsersIds.add(resultSet.getLong(1));
             }
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during ignored user id get: ", e);
         } finally {
             closeResultSet(resultSet);
             closeStatement(preparedStatement);
@@ -126,7 +123,7 @@ public class UserDao {
         ResultSet resultSet = null;
         try {
             Connection connection = DatabaseConnector.getConnection();
-            preparedStatement = connection.prepareStatement("SELECT * FROM IgnoredUsers WHERE lastCheck='' or lastCheck < ?");
+            preparedStatement = connection.prepareStatement("SELECT * FROM ignored_users WHERE last_check='' or last_check < ?");
             preparedStatement.setString(1, DataUtil.getYesterday());
 
             resultSet = preparedStatement.executeQuery();
@@ -135,7 +132,7 @@ public class UserDao {
                 ignoredUsers.add(new IgnoredUser(resultSet));
             }
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during ignored users get: ", e);
         } finally {
             closeResultSet(resultSet);
             closeStatement(preparedStatement);
@@ -147,7 +144,7 @@ public class UserDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("UPDATE IgnoredUsers SET passiveSince = ?, lastCheck = ? WHERE userId = ?");
+            preparedStatement = conn.prepareStatement("UPDATE ignored_users SET passive_since = ?, last_check = ? WHERE user_id = ?");
 
             preparedStatement.setString(1, ignoredUser.getPassiveSince());
             preparedStatement.setString(2, ignoredUser.getLastCheck());
@@ -155,7 +152,7 @@ public class UserDao {
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during ignored user update to passive: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -165,14 +162,14 @@ public class UserDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("UPDATE IgnoredUsers SET passiveSince = '', lastCheck = ? WHERE userId = ?");
+            preparedStatement = conn.prepareStatement("UPDATE ignored_users SET passive_since = '', last_check = ? WHERE user_id = ?");
 
             preparedStatement.setString(1, ignoredUser.getLastCheck());
             preparedStatement.setLong(2, ignoredUser.getUserId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during user active set: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -183,14 +180,14 @@ public class UserDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("UPDATE IgnoredUsers SET lastCheck = ? WHERE userId = ?");
+            preparedStatement = conn.prepareStatement("UPDATE ignored_users SET last_check = ? WHERE user_id = ?");
 
             preparedStatement.setString(1, ignoredUser.getLastCheck());
             preparedStatement.setLong(2, ignoredUser.getUserId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during last check set: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -201,12 +198,12 @@ public class UserDao {
         PreparedStatement preparedStatement = null;
         try {
             Connection conn = DatabaseConnector.getConnection();
-            preparedStatement = conn.prepareStatement("DELETE FROM IgnoredUsers WHERE userId = ?");
+            preparedStatement = conn.prepareStatement("DELETE FROM ignored_users WHERE user_id = ?");
             preparedStatement.setLong(1, ignoredUser.getUserId());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during ignored user delete: ", e);
         } finally {
             closeStatement(preparedStatement);
         }
@@ -217,7 +214,7 @@ public class UserDao {
             try {
                 resultSet.close();
             } catch (SQLException e) {
-                logger.error(e.getMessage());
+                logger.error("Error during result set close: ", e);
             }
         }
     }
@@ -227,7 +224,7 @@ public class UserDao {
             try {
                 statement.close();
             } catch (SQLException e) {
-                logger.error(e.getMessage());
+                logger.error("Error during statement close: ", e);
             }
         }
     }

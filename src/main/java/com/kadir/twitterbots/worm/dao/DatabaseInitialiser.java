@@ -35,57 +35,49 @@ public class DatabaseInitialiser {
         try (Statement statement = connection.createStatement()) {
             createPopularTweetsTableIfNotExist(statement);
             createIgnoredUsersTableIfNotExist(statement);
-            createSinceIdTableIfNotExist(statement);
             createIgnoredKeywordsTableIfNotExist(statement);
         }
     }
 
     private static void createPopularTweetsTableIfNotExist(Statement statement) throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS PopularTweets(" +
-                "id INTEGER PRIMARY KEY," +
-                "statusId INTEGER NOT NULL," +
-                "userId INTEGER NOT NULL," +
+        String sql = "CREATE TABLE IF NOT EXISTS popular_tweets(" +
+                "id SERIAL PRIMARY KEY," +
+                "status_id BIGSERIAL NOT NULL," +
+                "user_id BIGSERIAL NOT NULL," +
                 "score INTEGER NOT NULL," +
-                "foundDate TEXT," +
-                "statusCreationDate TEXT," +
-                "isQuoted INTEGER DEFAULT 0," +
-                "quotedDate TEXT DEFAULT ''," +
-                "statusLink TEXT DEFAULT ''," +
-                "statusText TEXT DEFAULT '');" +
-                "CREATE INDEX PopularTweets_IX ON PopularTweets(foundDate);" +
-                "CREATE INDEX PopularTweets_IX1 ON PopularTweets(quotedDate);" +
-                "CREATE INDEX PopularTweets_IX2 ON PopularTweets(score);" +
-                "CREATE INDEX PopularTweets_IX3 ON PopularTweets(userId);" +
-                "CREATE INDEX PopularTweets_IX4 ON PopularTweets(statusId, foundDate);";
+                "found_date varchar," +
+                "status_creation_date varchar," +
+                "is_quoted BOOLEAN DEFAULT false," +
+                "quoted_date varchar DEFAULT ''," +
+                "status_link varchar DEFAULT ''," +
+                "status_text varchar DEFAULT '');" +
+                "CREATE INDEX IF NOT EXISTS popular_tweets_idx ON popular_tweets (found_date);" +
+                "CREATE INDEX IF NOT EXISTS popular_tweets_idx2 ON popular_tweets (quoted_date);" +
+                "CREATE INDEX IF NOT EXISTS popular_tweets_idx3 ON popular_tweets (score);" +
+                "CREATE INDEX IF NOT EXISTS popular_tweets_idx4 ON popular_tweets (user_id);" +
+                "CREATE INDEX IF NOT EXISTS popular_tweets_idx5 ON popular_tweets (status_id, found_date);";
 
 
         statement.execute(sql);
     }
 
     private static void createIgnoredUsersTableIfNotExist(Statement statement) throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS IgnoredUsers(" +
-                "userId INTEGER UNIQUE NOT NULL," +
-                "screenName TEXT NOT NULL," +
-                "createdDate DATE DEFAULT (datetime('now','localtime'))," +
-                "passiveSince TEXT DEFAULT ''," +
-                "lastCheck TEXT DEFAULT '');";
+        String sql = "CREATE TABLE IF NOT EXISTS ignored_users(" +
+                "user_id BIGSERIAL UNIQUE NOT NULL," +
+                "screen_name varchar NOT NULL," +
+                "created_date DATE DEFAULT CURRENT_DATE," +
+                "passive_since varchar DEFAULT ''," +
+                "last_check varchar DEFAULT '');";
         statement.execute(sql);
     }
 
     private static void createIgnoredKeywordsTableIfNotExist(Statement statement) throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS IgnoredKeyWords(" +
-                "id INTEGER PRIMARY KEY," +
-                "word TEXT UNIQUE NOT NULL," +
+        String sql = "CREATE TABLE IF NOT EXISTS ignored_keywords(" +
+                "id SERIAL PRIMARY KEY," +
+                "word varchar UNIQUE NOT NULL," +
                 "type INTEGER NOT NULL," +
-                "createdDate DATE DEFAULT (datetime('now','localtime')));" +
-                "CREATE INDEX IgnoredWords_IX ON IgnoredWords(type);";
-        statement.execute(sql);
-    }
-
-    private static void createSinceIdTableIfNotExist(Statement statement) throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS SinceIdTable(" +
-                "sinceId INTEGER NOT NULL," +
-                "createdDate DATE DEFAULT (datetime('now','localtime')));";
+                "created_date DATE DEFAULT CURRENT_DATE);" +
+                "CREATE INDEX IF NOT EXISTS ignored_keywords_idx ON ignored_keywords(type);";
         statement.execute(sql);
     }
 }
