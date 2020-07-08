@@ -25,7 +25,7 @@ public class DatabaseInitialiser {
             createTablesIfNotExist();
             logger.info("Database initialisation successful.");
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("Error during database initialization: ", e);
             throw new DatabaseInitialisationException(e);
         }
     }

@@ -1,0 +1,39 @@
+version: '3.3'
+services:
+  worm-tr:
+    container_name: worm-tr
+    image: 'worm:0.0.1-SNAPSHOT'
+    environment:
+      - USER_TIMEZONE=GMT+3
+    volumes:
+      - './tr/worm.properties:/worm/worm.properties'
+      - './tr/auth.properties:/worm/auth.properties'
+      - './worm/log-tr:/worm/log'
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  worm-de:
+    container_name: worm-de
+    image: 'worm:0.0.1-SNAPSHOT'
+    environment:
+      - USER_TIMEZONE=GMT+3
+    volumes:
+      - './de/worm.properties:/worm/worm.properties'
+      - './de/auth.properties:/worm/auth.properties'
+      - './worm/log-de:/worm/log'
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  postgres:
+    container_name: worm_postgres
+    image: postgres:12.2
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+    volumes:
+      - './init-database.sh:/docker-entrypoint-initdb.d/init-database.sh'
+    ports:
+      - '5432:5432'
+    restart: unless-stopped

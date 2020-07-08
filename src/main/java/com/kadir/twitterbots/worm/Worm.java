@@ -51,7 +51,7 @@ public class Worm {
 
         try (InputStream input = new FileInputStream(propertyFile)) {
             properties.load(input);
-            Enumeration propertyKeys = properties.keys();
+            Enumeration<Object> propertyKeys = properties.keys();
 
             while (propertyKeys.hasMoreElements()) {
                 String key = (String) propertyKeys.nextElement();

@@ -1,6 +1,7 @@
 group 'com.kadir.twitterbots'
 
 apply plugin: 'java'
+apply plugin: 'maven'
 
 sourceCompatibility = 1.8
 compileJava.options.encoding = 'UTF-8'
@@ -17,6 +18,8 @@ repositories {
 }
 
 jar {
+  archiveFileName = 'worm.jar'
+
   manifest {
     attributes('Main-Class': 'com.kadir.twitterbots.worm.Worm')
   }
@@ -30,6 +33,12 @@ task run(type: JavaExec) {
   main = "com.kadir.twitterbots.alligator.Alligator"
 }
 
+task copyDependencies(type: Copy) {
+  from configurations.compile
+  into 'build/libs/dependencies'
+}
+
+jar.finalizedBy(copyDependencies)
 
 dependencies {
   implementation 'com.kadir.twitterbots.commons:bot-authenticator:1.0'

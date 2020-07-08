@@ -1,6 +1,6 @@
 package com.kadir.twitterbots.worm.dao;
 
-import com.kadir.twitterbots.worm.util.WormConstants;
+import com.kadir.twitterbots.worm.enumeration.VmOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +17,6 @@ import java.util.Properties;
  */
 public class DatabaseConnector {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseConnector.class);
-    private static final String DATABASE_URL = "jdbc:sqlite:" + WormConstants.RESOURCES_FOLDER_NAME + "popularTweetsDb";
     private static Connection connection;
 
     private DatabaseConnector() {
@@ -29,15 +28,19 @@ public class DatabaseConnector {
 
     private static Connection openConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
-            String url = "jdbc:postgresql://localhost:5432/worm-" + System.getProperty("languageKey");
+            String url = "jdbc:postgresql://" + System.getProperty(VmOption.DB_URL.getKey());
+
+            logger.info("Generated database url: {}", url);
+
             Properties props = new Properties();
-            props.setProperty("user", "postgres");
-            props.setProperty("password", "password");
+            props.setProperty("user", System.getProperty(VmOption.DB_USER.getKey()));
+            props.setProperty("password", System.getProperty(VmOption.DB_PASSWORD.getKey()));
 
             connection = DriverManager.getConnection(url, props);
             DatabaseMetaData meta = connection.getMetaData();
             logger.debug("Connected to database: {}", meta.getURL());
         }
+
         return connection;
     }
 
