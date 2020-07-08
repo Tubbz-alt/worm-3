@@ -1,9 +1,15 @@
-# Worm
+<h1 align="center">Worm</h1>
+
+<div align="center">
+  Bot that Finds daily popular tweets.
+</div>
 
 [![Build Status](https://travis-ci.org/akadir/worm.svg?branch=master)](https://travis-ci.org/akadir/worm)
 [![gradle-version](https://img.shields.io/badge/gradle-5.5.1-brightgreen)](https://img.shields.io/badge/gradle-5.5.1-brightgreen)
 
-Finds daily popular tweets.
+### TODO 
+
+update readme.md
 
 ### Usage
 clone project and set required properties in worm.properties and worm.auth files, and then execute: 
@@ -37,3 +43,7 @@ quoter-consumer-secret=
 quoter-access-token=
 quoter-access-token-secret=
 ```
+
+<div align="center">
+  Developed with ❤︎ by <a href="https://github.com/akadir">akadir</a>
+</div>
