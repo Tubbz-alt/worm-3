@@ -33,16 +33,15 @@ import java.util.stream.Collectors;
 public class TweetFetcher extends BaseScheduledRunnable {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    private Map<Long, CustomStatus> fetchedStatusMap = new HashMap<>();
+    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private final Map<Long, CustomStatus> fetchedStatusMap = new HashMap<>();
     private boolean isCancelled = false;
 
     private String languageKey;
     private int statusLimitToKeep;
     private Twitter twitter;
-    private TweetFilter tweetFilter;
-    private DatabaseWorker databaseWorker;
-    private StatusDao statusDao;
+    private final TweetFilter tweetFilter;
+    private final StatusDao statusDao;
     private static final int INITIAL_DELAY = 0;
     private static final int DELAY = 1;
 
@@ -54,7 +53,7 @@ public class TweetFetcher extends BaseScheduledRunnable {
         tweetFilter = new TweetFilter();
         tweetFilter.initForFetch(twitter);
 
-        databaseWorker = new DatabaseWorker(this);
+        DatabaseWorker databaseWorker = new DatabaseWorker(this);
         databaseWorker.schedule();
 
         statusDao = new StatusDao();

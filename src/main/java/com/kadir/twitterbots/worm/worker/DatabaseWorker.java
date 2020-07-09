@@ -8,12 +8,7 @@ import com.kadir.twitterbots.worm.scheduler.TaskScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -25,10 +20,10 @@ import java.util.concurrent.TimeUnit;
 public class DatabaseWorker extends BaseScheduledRunnable {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private TweetFetcher tweetFetcher;
-    private StatusDao statusDao;
-    private static final int INITIAL_DELAY = 30;
-    private static final int DELAY = 60;
+    private final TweetFetcher tweetFetcher;
+    private final StatusDao statusDao;
+    private static final int INITIAL_DELAY = 10;
+    private static final int DELAY = 30;
 
     public DatabaseWorker(TweetFetcher tweetFetcher) {
         super(TaskPriority.HIGH);
@@ -39,7 +34,7 @@ public class DatabaseWorker extends BaseScheduledRunnable {
 
     @Override
     public void schedule() {
-        scheduledFuture = executorService.scheduleWithFixedDelay(this, INITIAL_DELAY, DELAY, TimeUnit.SECONDS);
+        scheduledFuture = executorService.scheduleWithFixedDelay(this, INITIAL_DELAY, DELAY, TimeUnit.MINUTES);
         logger.info("add scheduler to run with fixed DELAY. initial delay:{} delay:{}", INITIAL_DELAY, DELAY);
         TaskScheduler.addScheduledTask(this);
     }
